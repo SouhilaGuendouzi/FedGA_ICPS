@@ -14,16 +14,20 @@ def mnist_iid(dataset, num_users):
     :param num_users:
     :return: dict of image index
     """
-    num_items = int(len(dataset)/num_users)  # dataset size in each user 
+    num_items = int(len(dataset)/num_users)  # dataset size is equal  for all users 
     #num_items = random.randint(1, int(len(dataset)/num_users) )
    # print(num_items)     
     dict_users, all_idxs = {}, [i for i in range(len(dataset))]
     for i in range(num_users):
-        dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
+        dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False)) # for each client_i, choose different samples without replacement
        
-        all_idxs = list(set(all_idxs) - dict_users[i])
+        all_idxs = list(set(all_idxs) - dict_users[i]) # Update the list of sample indexes
    
-    return dict_users
+    return dict_users # each user i and its samples
+
+
+
+
 
 
 def mnist_noniid(dataset, num_users):
