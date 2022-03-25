@@ -14,12 +14,16 @@ def cal_pop_fitness(equation_inputs, pop):
 
 def select_mating_pool(pop, fitness, num_parents):
     # Selecting the best individuals in the current generation as parents for producing the offspring of the next generation.
-       parents = numpy.empty((num_parents, pop.shape[1]))
+       #print(num_parents, pop.shape[1]) 
+       parents = numpy.empty((num_parents, pop.shape[1]))#4 6
+       #print(parents)
        for parent_num in range(num_parents):
           max_fitness_idx = numpy.where(fitness == numpy.max(fitness))
+          #print(max_fitness_idx[0][0])
           max_fitness_idx = max_fitness_idx[0][0]
           parents[parent_num, :] = pop[max_fitness_idx, :]
           fitness[max_fitness_idx] = -99999999999
+          print(fitness)
        return parents
 
 
@@ -69,7 +73,7 @@ if __name__ == '__main__':
   for generation in range(num_generations):
     # Measuring the fitness of each chromosome in the population.
     fitness = cal_pop_fitness(equation_inputs, new_population)
-    print("Objective Function=",fitness)
+    #print("Objective Function=",fitness)
 
     # Selecting the best parents in the population for mating.
     parents = select_mating_pool(new_population, fitness, 
@@ -86,7 +90,7 @@ if __name__ == '__main__':
     # Creating the new population based on the parents and offspring.
     new_population[0:parents.shape[0], :] = parents
     new_population[parents.shape[0]:, :] = offspring_mutation
-    print("Population ===> ",generation,"===>",new_population)
+    #print("Population ===> ",generation,"===>",new_population)
     
 
 
