@@ -38,17 +38,18 @@ def select_mating_pool(pop, fitness, num_parents,sub_weights_size):
        # Selecting the best individuals in the current generation as parents for producing the offspring of the next generation.
        #print(num_parents, pop.shape[1]) 
        parents =[] #numpy.empty((num_parents, sub_weights_size))#10 8
-
+       num_parents=5
        for parent_num in range(num_parents):
           print(len(parents))
           min_fitness_idx = numpy.where(fitness == numpy.min(fitness)) 
           print(min_fitness_idx) #tableau des index
           min_fitness_idx = min_fitness_idx[0][0] #le plus petit index
-          parents[parent_num, : ] = pop[min_fitness_idx, : ]
+          parents.append(pop.item(min_fitness_idx,)) 
           fitness[min_fitness_idx] = 99999999999
           
        print('end select parents')  
        parents = numpy.array(parents)
+       print(parents.item((0,0)))
     
        return parents
 
