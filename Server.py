@@ -9,10 +9,12 @@ import copy
 import numpy as np
 from torchvision import datasets, transforms
 import torch
+from torch.utils.data import DataLoader, Dataset
 from Options import args_parser
 from Model import CNNMnist 
 from Client import Client , LocalUpdate 
 from FedAVG import FedAvg
+from FedGA import FedGA
 
 if __name__ == '__main__':
     # parse args
@@ -24,6 +26,13 @@ if __name__ == '__main__':
     trans_mnist = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
     dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
     dataset_test = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
+    print(dataset_test)
+    test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
+    dataset_test = DataLoader(dataset=test_subset, shuffle=True)
+    dataset_validate = DataLoader(dataset=val_subset, shuffle=False)
+
+
+
     num_items = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
     net_glob = CNNMnist(args=args).to(args.device)
     net_glob.train() # au debut tous les clients ont le meme model
@@ -69,8 +78,10 @@ if __name__ == '__main__':
                 w_locals.append(copy.deepcopy(w))
             loss_locals.append(copy.deepcopy(loss))
         # update global weights
-        w_glob = FedAvg(w_locals)
-
+       # w_glob = FedAvg(w_locals)
+        w_locals= np.array(w_locals)
+        print(w_locals.dtype)
+        w_glob = FedGA(w_locals,net_glob,dataset_validate)
         # copy weight to net_glob
         net_glob.load_state_dict(w_glob)
 
