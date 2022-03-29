@@ -62,7 +62,9 @@ if __name__ == '__main__':
        print("Aggregation over all clients")
        w_locals = [w_glob for i in range(args.num_users)]
 
-    for iter in range(args.epochs):   
+    for iter in range(args.epochs): 
+        i=0 
+        print('iteration',iter) 
         loss_locals = []
         if not args.all_clients:
             w_locals = []
@@ -81,18 +83,21 @@ if __name__ == '__main__':
      
         w_locals= np.array(w_locals)
         initial_population=w_locals
-        i=0
+       
         for d in w_locals: # for each user
+          print(type(d))
           print('user ',i+1)
           weight=[]
-          if (iter==0):
+          if isinstance(d, dict):
             for x in d.items():  #get weights of each layer
                  array = np.array(x[1], dtype='f')#1 is a tensor
                  array= array.flatten()
                  weight= np.concatenate((weight, array), axis=0)
             initial_population[i]= np.array(weight,dtype='f')
-          else:
-             initial_population[i]= np.array(d,dtype='f')
+           
+         
+        
+
          #print(weight) 
          
           
