@@ -80,27 +80,44 @@ if __name__ == '__main__':
        # w_glob = FedAvg(w_locals)
      
         w_locals= np.array(w_locals)
+        initial_population=w_locals
+        i=0
+        for d in w_locals: # for each user
+          print('user ',i+1)
+          weight=[]
+          if (iter==0):
+            for x in d.items():  #get weights of each layer
+                 array = np.array(x[1], dtype='f')#1 is a tensor
+                 array= array.flatten()
+                 weight= np.concatenate((weight, array), axis=0)
+            initial_population[i]= np.array(weight,dtype='f')
+          else:
+             initial_population[i]= np.array(d,dtype='f')
+         #print(weight) 
+         
+          
+          
+          i=i+1
        
-      
-        w_glob = FedGA(w_locals,net_glob,dataset_validate)
+        w_glob = FedGA(initial_population,net_glob,dataset_validate)
         # copy weight to net_glob
-        #net_glob.load_state_dict(w_glob)
+        net_glob.load_state_dict(w_glob)
 
         # print loss
         loss_avg = sum(loss_locals) / len(loss_locals)
-        #print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
-        #loss_train.append(loss_avg)
+        print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
+        loss_train.append(loss_avg)
 
     # plot loss curve
-     #plt.figure()
-     #plt.plot(range(len(loss_train)), loss_train)
-     #plt.ylabel('train_loss')
-     #plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid))
+    plt.figure()
+    plt.plot(range(len(loss_train)), loss_train)
+    plt.ylabel('train_loss')
+    plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid))
 
     # testing
-     #net_glob.eval()
-     #acc_train, loss_train = net_glob.test_img(net_glob, dataset_train, args)
-     #acc_test, loss_test = net_glob.test_img(net_glob, dataset_test, args)
-    # print("Training accuracy: {:.2f}".format(acc_train))
-     #print("Testing accuracy: {:.2f}".format(acc_test))
+    net_glob.eval()
+    acc_train, loss_train = net_glob.test_img(net_glob, dataset_train, args)
+    acc_test, loss_test = net_glob.test_img(net_glob, dataset_test, args)
+    print("Training accuracy: {:.2f}".format(acc_train))
+    print("Testing accuracy: {:.2f}".format(acc_test))
 

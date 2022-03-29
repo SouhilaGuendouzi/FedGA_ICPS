@@ -13,6 +13,7 @@ loss_function = nn.CrossEntropyLoss()
 def fitness(solution, sol_idx):
    
         loss=0.0
+        print('solution',solution)
         model_weights_dict = tg.model_weights_as_dict(model=model, weights_vector=solution)
         model.load_state_dict(model_weights_dict)
 
@@ -20,7 +21,7 @@ def fitness(solution, sol_idx):
         
            prediction = model(data)
    
-           loss += loss_function(prediction, target)
+           loss += loss_function(prediction, target).detach().numpy() + 0.00000001
           
         loss /= len(dataset.dataset)
 
@@ -29,38 +30,21 @@ def fitness(solution, sol_idx):
     
         return loss
         
-     
-
 
 def callback_generation(ga_instance):
     print("Generation = {generation}".format(generation=ga_instance.generations_completed))
     print("Fitness    = {fitness}".format(fitness=ga_instance.best_solution()[1]))
 
 def FedGA(w,modell,datasett):
-    
-   global  initial_population, w_size, model, dataset, local_weights
+   print('begin FedGA')
+   global  initial_population, w_size, model, dataset
    dataset = datasett
-   model =modell
-   w_size =len(w)
-   initial_population= w
-   local_weights=w
-   i=0
-   for d in w: # for each user
-         print('user ',i+1)
-         weight=[]
-         for x in d.items():  #get weights of each layer
-                 array = numpy.array(x[1], dtype='f')#1 is a tensor
-                 array= array.flatten()
-                 weight= numpy.concatenate((weight, array), axis=0)
-
-         #print(weight) 
-         initial_population[i]= numpy.array(weight,dtype='f')
-         i=i+1
-
-
-   num_generations =3# Number of generations.
-   num_parents_mating = 5 # Number of solutions to be selected as parents in the mating pool.
+   model   = modell
+   initial_population= w 
    initial_population=initial_population.tolist()
+   num_generations =3# Number of generations.
+   num_parents_mating = 10 # Number of solutions to be selected as parents in the mating pool.
+  
   
    #print(initial_population)
    parent_selection_type = "sss" # Type of parent selection.

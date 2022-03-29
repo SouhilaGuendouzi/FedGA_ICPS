@@ -64,10 +64,10 @@ data_inputs = data_inputs.reshape((data_inputs.shape[0], data_inputs.shape[3], d
 data_outputs = torch.from_numpy(numpy.load("dataset_outputs.npy")).long()
 
 # Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
-num_generations = 10 # Number of generations.
+num_generations = 100 # Number of generations.
 num_parents_mating = 5 # Number of solutions to be selected as parents in the mating pool.
 initial_population = torch_ga.population_weights # Initial population of network weights.
-print(initial_population.shape)
+
 parent_selection_type = "sss" # Type of parent selection.
 crossover_type = "single_point" # Type of the crossover operator.
 mutation_type = "random" # Type of the mutation operator.
