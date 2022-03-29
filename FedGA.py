@@ -5,99 +5,101 @@ from torch import nn
 import numpy
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
-def cal_pop_fitness(pop, w_size, net_glob, dataset):
-    fitness=[]
-    Global=net_glob
-    print(w_size)
-    for i in range(w_size)  :
-        Global.load_state_dict(pop[i])
-        loss = 0
-        #data_loader = DataLoader(dataset)
-        l = len(dataset)
-        #print(enumerate(data_loader))
-        #print(DataLoader)
-        for idx, (data, target) in enumerate(dataset):
-           #if args.gpu != -1:
-           #   data, target = data.cuda(), target.cuda()
-           log_probs = Global(data)
-           # sum up batch loss
-           loss += F.cross_entropy(log_probs, target, reduction='sum').item()
-           # get the index of the max log-probability
-           y_pred = log_probs.data.max(1, keepdim=True)[1]
-         
+import pygad
+import pygad.torchga as tg
 
+loss_function = nn.CrossEntropyLoss()
+
+def fitness(solution, sol_idx):
+   
+        loss=0.0
+        model_weights_dict = tg.model_weights_as_dict(model=model, weights_vector=solution)
+        model.load_state_dict(model_weights_dict)
+
+        for idx, (data, target) in enumerate(dataset):
+        
+           prediction = model(data)
+   
+           loss += loss_function(prediction, target)
+          
         loss /= len(dataset.dataset)
-        fitness.append(loss)
-    print('end fitness',fitness)     
+
+        loss=  1.0 / (loss.item())
+        
     
-    return fitness
+        return loss
+        
      
 
 
-def select_mating_pool(pop, fitness, num_parents,sub_weights_size):
-       # Selecting the best individuals in the current generation as parents for producing the offspring of the next generation.
-       #print(num_parents, pop.shape[1]) 
-       parents =[] #numpy.empty((num_parents, sub_weights_size))#10 8
-       num_parents=5
-       for parent_num in range(num_parents):
-          print(len(parents))
-          min_fitness_idx = numpy.where(fitness == numpy.min(fitness)) 
-          print(min_fitness_idx) #tableau des index
-          min_fitness_idx = min_fitness_idx[0][0] #le plus petit index
-          parents.append(pop.item(min_fitness_idx,)) 
-          fitness[min_fitness_idx] = 99999999999
-          
-       print('end select parents')  
-       parents = numpy.array(parents)
-       print(parents.item((0,0)))
+def callback_generation(ga_instance):
+    print("Generation = {generation}".format(generation=ga_instance.generations_completed))
+    print("Fitness    = {fitness}".format(fitness=ga_instance.best_solution()[1]))
+
+def FedGA(w,modell,datasett):
     
-       return parents
+   global  initial_population, w_size, model, dataset, local_weights
+   dataset = datasett
+   model =modell
+   w_size =len(w)
+   initial_population= w
+   local_weights=w
+   i=0
+   for d in w: # for each user
+         weight=[]
+    
+         for x in d.items():  #get weights of each layer
+                 array = numpy.array(x[1], dtype='f')#1 is a tensor
+                 array= array.flatten()
+                 weight= numpy.concatenate((weight, array), axis=0)
+
+         #print(weight) 
+         initial_population[i]= numpy.array(weight,dtype='f')
+         i=i+1
 
 
-def crossover(parents, offspring_size):
-    offspring = numpy.empty(offspring_size)
-    # The point at which crossover takes place between two parents. Usually, it is at the center.
-    crossover_point = numpy.uint8(offspring_size[1]/2)
+   num_generations =3# Number of generations.
+   num_parents_mating = 5 # Number of solutions to be selected as parents in the mating pool.
+   initial_population=initial_population.tolist()
+  
+   #print(initial_population)
+   parent_selection_type = "sss" # Type of parent selection.
+   crossover_type = "single_point" # Type of the crossover operator.
+   mutation_type = "random" # Type of the mutation operator.
+   mutation_percent_genes = 10 # Percentage of genes to mutate. This parameter has no action if the parameter mutation_num_genes exists.
+   keep_parents = -1 # Number of parents to keep in the next population. -1 means keep all parents and 0 means keep nothing.
 
-    for k in range(offspring_size[0]):
-        # Index of the first parent to mate.
-        parent1_idx = k%parents.shape[0]
-        # Index of the second parent to mate.
-        parent2_idx = (k+1)%parents.shape[0]
-        # The new offspring will have its first half of its genes taken from the first parent.
-        offspring[k, 0:crossover_point] = parents[parent1_idx, 0:crossover_point]
-        # The new offspring will have its second half of its genes taken from the second parent.
-        offspring[k, crossover_point:] = parents[parent2_idx, crossover_point:]
-    print('end cross over')  
-    return offspring
+# Create an instance of the pygad.GA class
+   ga_instance = pygad.GA(num_generations=num_generations, 
+                       num_parents_mating=num_parents_mating, 
+                       initial_population=initial_population,
+                       fitness_func=fitness,
+                       parent_selection_type=parent_selection_type,
+                       crossover_type=crossover_type,
+                       mutation_type=mutation_type,
+                       mutation_percent_genes=mutation_percent_genes,
+                       keep_parents=keep_parents,
+                       on_generation=callback_generation)
 
+# Start the genetic algorithm evolution.
+   ga_instance.run()
 
-def mutation(offspring_crossover):
-    # Mutation changes a single gene in each offspring randomly.
-    for idx in range(offspring_crossover.shape[0]):
-        # The random value to be added to the gene.
-        random_value = numpy.random.uniform(-1.0, 1.0, 1)
-        offspring_crossover[idx, 4] = offspring_crossover[idx, 4] + random_value
-    print('end mutation')  
-    return offspring_crossover
+# After the generations complete, some plots are showed that summarize how the outputs/fitness values evolve over generations.
+   ga_instance.plot_result(title="PyGAD & PyTorch - Iteration vs. Fitness", linewidth=4)
 
-
-
-def FedGA(w,global_M,dataset):
-    w_size= len(w)
-    sub_weight_size=len(w[0])
+# Returning the details of the best solution.
+   solution, solution_fitness, solution_idx = ga_instance.best_solution()
+ 
+#Fetch the parameters of the best solution.
+   best_solution_weights = tg.model_weights_as_dict(model=model,  weights_vector=solution)
+                                                 
+   model.load_state_dict(best_solution_weights)
+   return best_solution_weights
    
-    initial_popluation= w
-    previous_M=global_M
-    num_iteration= 10
-    new_population=initial_popluation
-    for i in range(num_iteration):
-        print('Begin',i,'GA iteration')  
-        fitness=cal_pop_fitness(initial_popluation,w_size,previous_M,dataset)
-        parents=select_mating_pool(initial_popluation, fitness, len(w), sub_weight_size)
-        print(parents.shape)
-        offspring_crossover = crossover(parents, offspring_size=(len(w[0])-parents.shape[0],len(w)))
-        offspring_mutation = mutation(offspring_crossover)
-        new_population[0:parents.shape[0], :] = parents
-        new_population[parents.shape[0]:, :] = offspring_mutation
 
+
+ 
+  
+  
+
+   

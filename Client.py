@@ -21,11 +21,6 @@ class Client(object):
          self.accuracy=None
     
 
-
-
-   
-
-
 class DatasetSplit(Dataset):
     def __init__(self, dataset, idxs):
         #print(dataset)
