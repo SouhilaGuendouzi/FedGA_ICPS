@@ -46,8 +46,8 @@ def FedGA(w,modell,datasett):
    local_weights=w
    i=0
    for d in w: # for each user
+         print('user ',i+1)
          weight=[]
-    
          for x in d.items():  #get weights of each layer
                  array = numpy.array(x[1], dtype='f')#1 is a tensor
                  array= array.flatten()
@@ -85,7 +85,7 @@ def FedGA(w,modell,datasett):
    ga_instance.run()
 
 # After the generations complete, some plots are showed that summarize how the outputs/fitness values evolve over generations.
-   ga_instance.plot_result(title="PyGAD & PyTorch - Iteration vs. Fitness", linewidth=4)
+   #ga_instance.plot_result(title="PyGAD & PyTorch - Iteration vs. Fitness", linewidth=4)
 
 # Returning the details of the best solution.
    solution, solution_fitness, solution_idx = ga_instance.best_solution()
