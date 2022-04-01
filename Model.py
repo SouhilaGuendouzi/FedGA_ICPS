@@ -33,9 +33,9 @@ class CNNMnist(nn.Module):
         test_loss = 0
         correct = 0
         data_loader = DataLoader(datatest, batch_size=args.bs)
-        l = len(data_loader)
+        l = len(datatest)
         #print(DataLoader)
-        for idx, (data, target) in enumerate(data_loader):
+        for idx, (data, target) in enumerate(datatest):
            #if args.gpu != -1:
            #   data, target = data.cuda(), target.cuda()
            log_probs = net_g(data)
@@ -45,11 +45,11 @@ class CNNMnist(nn.Module):
            y_pred = log_probs.data.max(1, keepdim=True)[1]
            correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
 
-        test_loss /= len(data_loader.dataset)
-        accuracy = 100.00 * correct / len(data_loader.dataset)
+        test_loss /= len(datatest.dataset)
+        accuracy = 100.00 * correct / len(datatest.dataset)
         if args.verbose:
             print('\nTest set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(
-            test_loss, correct, len(data_loader.dataset), accuracy))
+            test_loss, correct, len(datatest.dataset), accuracy))
         return accuracy, test_loss
 
 

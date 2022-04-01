@@ -14,11 +14,12 @@ import random
 from sklearn import metrics
 class Client(object):
 
-     def __init__(self, id,model, dataset,accuracy=None):
+     def __init__(self, id,model, dataset,accuracy=None):#,device
          self.id=id
          self.dataset=dataset
          self.model=model
          self.accuracy=None
+         #self.device=device,
     
 
 class DatasetSplit(Dataset):
@@ -41,7 +42,7 @@ class LocalUpdate(object):
         self.args = args
         self.loss_func = nn.CrossEntropyLoss()
         self.selected_clients = []
-        self.ldr_train = DataLoader(DatasetSplit(dataset, idxs), batch_size=self.args.local_bs, shuffle=True)
+        self.ldr_train = DataLoader(DatasetSplit(dataset, idxs), shuffle=True,batch_size=args.local_bs)
 
     def train(self, net):
 

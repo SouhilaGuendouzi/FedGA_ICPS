@@ -78,50 +78,49 @@ if __name__ == '__main__':
             else:
                 w_locals.append(copy.deepcopy(w))
             loss_locals.append(copy.deepcopy(loss))
-        # update global weights
-       # w_glob = FedAvg(w_locals)
-     
+        loss_avg = sum(loss_locals) / len(loss_locals)
+        if (iter==0):
+           print('Before aggregation')
+           print(' Average loss {:.3f}'.format(loss_avg))
+        else:
+          print('Round {:3d}, Average loss {:.3f}'.format(iter-1, loss_avg))
+        loss_train.append(loss_avg)
         w_locals= np.array(w_locals)
-        initial_population=w_locals
+        if (args.aggr=='fedAVG'):
+            # update global weights
+            w_glob = FedAvg(w_locals)
+        elif (args.aggr=='fedGA'):
+             initial_population=w_locals
        
-        for d in w_locals: # for each user
-          print(type(d))
-          print('user ',i+1)
-          weight=[]
-          if isinstance(d, dict):
-            for x in d.items():  #get weights of each layer
-                 array = np.array(x[1], dtype='f')#1 is a tensor
-                 array= array.flatten()
-                 weight= np.concatenate((weight, array), axis=0)
-            initial_population[i]= np.array(weight,dtype='f')
-           
-         
-        
-
-         #print(weight) 
-         
-          
-          
-          i=i+1
+             for d in w_locals: # for each user
+                weight=[]
+                if isinstance(d, dict):
+                     for x in d.items():  #get weights of each layer
+                         array = np.array(x[1], dtype='f')#1 is a tensor
+                         array= array.flatten()
+                         weight= np.concatenate((weight, array), axis=0)
+                         initial_population[i]= np.array(weight,dtype='f')
+                i=i+1 # next weight vector (user)
        
-        w_glob = FedGA(initial_population,net_glob,dataset_validate)
-        # copy weight to net_glob
+             w_glob = FedGA(initial_population,net_glob,dataset_validate)
+             # copy weight to net_glob
         net_glob.load_state_dict(w_glob)
 
         # print loss
-        loss_avg = sum(loss_locals) / len(loss_locals)
-        print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
-        loss_train.append(loss_avg)
+        
 
     # plot loss curve
     plt.figure()
     plt.plot(range(len(loss_train)), loss_train)
     plt.ylabel('train_loss')
-    plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid))
+    plt.savefig('./save/fed_{}_{}_{}_C{}_iidFEDGA{}.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid))
 
     # testing
     net_glob.eval()
+    print('train Test')
+    dataset_train=  DataLoader(dataset_train)
     acc_train, loss_train = net_glob.test_img(net_glob, dataset_train, args)
+    print('test Test')
     acc_test, loss_test = net_glob.test_img(net_glob, dataset_test, args)
     print("Training accuracy: {:.2f}".format(acc_train))
     print("Testing accuracy: {:.2f}".format(acc_test))
