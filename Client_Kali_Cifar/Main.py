@@ -3,9 +3,9 @@ from Options import args_parser
 import torch
 from torchvision import datasets, transforms
 import torch.nn.functional as F
-from Model import ClientModel
-from Client import Client
 
+from Client import Client
+from Model import ClientModel
 
 
 if __name__ == '__main__':
@@ -19,13 +19,13 @@ if __name__ == '__main__':
     #port = args.portServer
 
 
-    trans_mnist = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-    datasetTrain = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
-    datasetTest = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
+    trans_cifar = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    dataset_train = datasets.CIFAR10('../data/cifar', train=True, download=True, transform=trans_cifar)
+    dataset_test = datasets.CIFAR10('../data/cifar', train=False, download=True, transform=trans_cifar)
 
     
-    model= ClientModel(args)
-    client = Client(id=1,model=model, datasetTRain=datasetTrain, datasetTest=datasetTest,args= args)
+    model= ClientModel(args=args).to(args.device)
+    client = Client(id=2,model=model, datasetTRain=dataset_train , datasetTest=dataset_test,args= args)
     weights, loss= client.local_update()
     print('Loss ', loss)
     

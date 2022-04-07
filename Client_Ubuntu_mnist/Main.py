@@ -24,7 +24,7 @@ if __name__ == '__main__':
     datasetTest = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
 
     
-    model= ClientModel(args)
+    model= ClientModel(args=args).to(args.device)
     client = Client(id=1,model=model, datasetTRain=datasetTrain, datasetTest=datasetTest,args= args)
     weights, loss= client.local_update()
     print('Loss ', loss)
