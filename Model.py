@@ -11,7 +11,7 @@ from sklearn import metrics
 class CNNMnist(nn.Module):
     def __init__(self, args):
         super(CNNMnist, self).__init__()
-        self.conv1 = nn.Conv2d(args.num_channels, 10, kernel_size=5)
+        self.conv1 = nn.Conv2d(args.num_channels, 10, kernel_size=5) #for gray images ==> args.num_channels===1 
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.conv2_drop = nn.Dropout2d()
         #self.flatten= torch.nn.Flatten()
@@ -32,12 +32,7 @@ class CNNMnist(nn.Module):
         # testing
         test_loss = 0
         correct = 0
-        data_loader = DataLoader(datatest, batch_size=args.bs)
-        l = len(datatest)
-        #print(DataLoader)
         for idx, (data, target) in enumerate(datatest):
-           #if args.gpu != -1:
-           #   data, target = data.cuda(), target.cuda()
            log_probs = net_g(data)
            # sum up batch loss
            test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()

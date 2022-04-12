@@ -42,8 +42,8 @@ def FedGA(w,modell,datasett):
    model   = modell
    initial_population= w 
    initial_population=initial_population.tolist()
-   num_generations =100# Number of generations.
-   num_parents_mating = 10 # Number of solutions to be selected as parents in the mating pool.
+   num_generations =5# Number of generations.
+   num_parents_mating = 5 # Number of solutions to be selected as parents in the mating pool.
   
   
    #print(initial_population)

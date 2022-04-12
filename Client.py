@@ -5,13 +5,10 @@ from torch import nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
-
-
-
-
-
 import random
 from sklearn import metrics
+
+
 class Client(object):
 
      def __init__(self, id,model, dataset,accuracy=None):#,device
@@ -41,7 +38,6 @@ class LocalUpdate(object):
     def __init__(self, args, dataset=None, idxs=None):
         self.args = args
         self.loss_func = nn.CrossEntropyLoss()
-        self.selected_clients = []
         self.ldr_train = DataLoader(DatasetSplit(dataset, idxs), shuffle=True,batch_size=args.local_bs)
 
     def train(self, net):

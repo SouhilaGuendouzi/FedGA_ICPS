@@ -57,6 +57,24 @@ if __name__ == '__main__':
     net_best = None
     best_loss = None
     val_acc_list, net_list = [], []
+    loss_locals = []
+    w_locals = [w_glob for i in range(args.num_users)]
+
+    m = max(int(args.frac * args.num_users), 1)
+    ids_users = np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
+    w_locals = [w_glob for i in range(args.num_users)]
+    for id in ids_users: #idx of a user
+            local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[id].dataset)
+            w, loss = local.train(net=copy.deepcopy(net_glob).to(args.device))
+            if args.all_clients:
+                w_locals[id] = copy.deepcopy(w)
+            else:
+                w_locals.append(copy.deepcopy(w))
+            loss_locals.append(copy.deepcopy(loss))
+
+    loss_avg = sum(loss_locals) / len(loss_locals)
+    print('Before aggregation')
+    print(' Average loss {:.3f}'.format(loss_avg))
 
     if args.all_clients: 
        print("Aggregation over all clients")
@@ -69,6 +87,7 @@ if __name__ == '__main__':
         if not args.all_clients:
             w_locals = []
         m = max(int(args.frac * args.num_users), 1)
+        print('number og clients',m)
         ids_users = np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
         for id in ids_users: #idx of a user
             local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[id].dataset)
@@ -79,11 +98,7 @@ if __name__ == '__main__':
                 w_locals.append(copy.deepcopy(w))
             loss_locals.append(copy.deepcopy(loss))
         loss_avg = sum(loss_locals) / len(loss_locals)
-        if (iter==0):
-           print('Before aggregation')
-           print(' Average loss {:.3f}'.format(loss_avg))
-        else:
-          print('Round {:3d}, Average loss {:.3f}'.format(iter-1, loss_avg))
+        print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
         loss_train.append(loss_avg)
         w_locals= np.array(w_locals)
         if (args.aggr=='fedAVG'):
@@ -124,4 +139,3 @@ if __name__ == '__main__':
     acc_test, loss_test = net_glob.test_img(net_glob, dataset_test, args)
     print("Training accuracy: {:.2f}".format(acc_train))
     print("Testing accuracy: {:.2f}".format(acc_test))
-
