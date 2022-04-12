@@ -8,16 +8,17 @@ from Client import Client
 from Model import ClientModel
 import pickle
 import socket
-
+import ipaddress
 if __name__ == '__main__':
     
     # parse args
     args = args_parser()
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    hote = args.addrServer
+    hote ='192.168.69.163'   
     port = args.portServer
     client.connect((hote, port))
+    print ("Connection on {}".format(port))
 
 
     trans_cifar = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -30,7 +31,10 @@ if __name__ == '__main__':
     weights, loss= client.local_update()
 
     dataTosend=pickle.dumps(weights)
+    client.send(dataTosend)
     print('Loss ', loss)
+    print ("Close")
+    socket.close()
     
         #socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #socket.connect((hote, port))
