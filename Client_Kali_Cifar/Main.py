@@ -6,17 +6,18 @@ import torch.nn.functional as F
 
 from Client import Client
 from Model import ClientModel
-
+import pickle
+import socket
 
 if __name__ == '__main__':
     
     # parse args
     args = args_parser()
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    
-    
-   # hote = args.addrServer
-    #port = args.portServer
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    hote = args.addrServer
+    port = args.portServer
+    client.connect((hote, port))
 
 
     trans_cifar = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -27,6 +28,8 @@ if __name__ == '__main__':
     model= ClientModel(args=args).to(args.device)
     client = Client(id=2,model=model, datasetTRain=dataset_train , datasetTest=dataset_test,args= args)
     weights, loss= client.local_update()
+
+    dataTosend=pickle.dumps(weights)
     print('Loss ', loss)
     
         #socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
