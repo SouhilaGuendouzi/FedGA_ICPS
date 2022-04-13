@@ -15,6 +15,9 @@ from Model import CNNMnist
 from Client import Client , LocalUpdate 
 from FedAVG import FedAvg
 from FedGA import FedGA
+from FedPer import FedPer
+
+
 
 if __name__ == '__main__':
     # parse args
@@ -80,6 +83,8 @@ if __name__ == '__main__':
        print("Aggregation over all clients")
        w_locals = [w_glob for i in range(args.num_users)]
 
+    print('number of interation',args.epochs)
+    print('number of clients',m)
     for iter in range(args.epochs): 
         i=0 
         print('iteration',iter) 
@@ -87,7 +92,7 @@ if __name__ == '__main__':
         if not args.all_clients:
             w_locals = []
         m = max(int(args.frac * args.num_users), 1)
-        print('number og clients',m)
+  
         ids_users = np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
         for id in ids_users: #idx of a user
             local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[id].dataset)
@@ -118,7 +123,9 @@ if __name__ == '__main__':
                 i=i+1 # next weight vector (user)
        
              w_glob = FedGA(initial_population,net_glob,dataset_validate)
-             # copy weight to net_glob
+        elif (args.aggr=='fedPer'):
+            
+            w_glob = FedPer(w_locals)
         net_glob.load_state_dict(w_glob)
 
         # print loss
