@@ -10,10 +10,10 @@ def args_parser():
     # federated arguments
     #parser.add_argument('--addrServer', type=string, default='192.168.69.63', help="address of server")
     parser.add_argument('--portServer', type=int,  help="port of server")
-    parser.add_argument('--epochs', type=int, default=20, help="rounds of training")
+    parser.add_argument('--epochs', type=int, default=10, help="rounds of training")
     parser.add_argument('--num_users', type=int, default=50, help="number of users: K")
     parser.add_argument('--frac', type=float, default=0.1, help="the fraction of clients: C")
-    parser.add_argument('--local_ep', type=int, default=10, help="the number of local epochs: E")
+    parser.add_argument('--local_ep', type=int, default=20, help="the number of local epochs: E")
     
     parser.add_argument('--local_bs', type=int, default=10, help="local batch size: B")
     parser.add_argument('--bs', type=int, default=128, help="test batch size")

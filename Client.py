@@ -1,66 +1,75 @@
-import numpy as np
-
+import socket
+from utils.Options import args_parser
+from torchvision import datasets, transforms
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
+from Model import Model
 import torch
 from torch import nn
-import torch.nn.functional as F
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Dataset
-import random
-from sklearn import metrics
-
 
 class Client(object):
 
-     def __init__(self, id,model, dataset,accuracy=None):#,device
+     def __init__(self, id,model, datasetTRain, datasetTest, args):#,device
+
          self.id=id
-         self.dataset=dataset
+         self.datasetTrain = datasetTRain
+         self.datasetTest = datasetTest
          self.model=model
          self.accuracy=None
+         self.args=args
+        
          #self.device=device,
     
+     
+     def local_update(self,w):
 
-class DatasetSplit(Dataset):
-    def __init__(self, dataset, idxs):
-        #print(dataset)
-        self.dataset = dataset
-        self.idxs = list(idxs)
-        # print(len(self.idxs))
-
-    def __len__(self):
-        return len(self.idxs)
-
-    def __getitem__(self, item):
-        image, label = self.dataset[self.idxs[item]]
-        return image, label
-
-
-class LocalUpdate(object):
-    def __init__(self, args, dataset=None, idxs=None):
-        self.args = args
-        self.loss_func = nn.CrossEntropyLoss()
-        self.ldr_train = DataLoader(DatasetSplit(dataset, idxs), shuffle=True,batch_size=args.local_bs)
-
-    def train(self, net):
-
-
-        net.train()
-        # train and update
-        optimizer = torch.optim.SGD(net.parameters(), lr=self.args.lr, momentum=self.args.momentum)
-
-        epoch_loss = []
-        for iter in range(self.args.local_ep):
+         loss_func = nn.CrossEntropyLoss()
+         ldr_train = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         self.model.load_state_dict(w)
+         self.model.train()
+         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
+         epoch_loss = []
+         
+         for iter in range(self.args.local_ep):
+            print('epoch',iter)
             batch_loss = []
-            #print(len(self.ldr_train))
-            for batch_idx, (images, labels) in enumerate(self.ldr_train):
+            
+            for batch_idx, (images, labels) in enumerate(ldr_train):
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
-                net.zero_grad()
-                log_probs = net(images)
-                loss = self.loss_func(log_probs, labels)
+                self.model.zero_grad()
+                log_probs = self.model(images)
+                loss = loss_func(log_probs, labels)
                 loss.backward()
                 optimizer.step()
-          
+                if self.args.verbose and batch_idx % 10 == 0:
+                    print('Update Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                        iter, batch_idx * len(images), len(ldr_train.dataset),
+                               100. * batch_idx / len(ldr_train), loss.item()))
              
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
-            
-        return net.state_dict(), sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
+      
+         return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
+
+
+     def test_img(self):
+        self.model.eval()
+        # testing
+        test_loss = 0
+        correct = 0
+        for idx, (data, target) in enumerate(self.datasetTest):
+           log_probs =  self.model(data)
+           # sum up batch loss
+           test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()
+           # get the index of the max log-probability
+           y_pred = log_probs.data.max(1, keepdim=True)[1]
+           correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
+
+        test_loss /= len(self.datasetTest.dataset)
+        accuracy = 100.00 * correct / len(self.datasetTest.dataset)
+
+        if self.args.verbose:
+            print('\nTest set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(
+            test_loss, correct, len(self.datasetTest.dataset), accuracy))
+        return accuracy, test_loss
+

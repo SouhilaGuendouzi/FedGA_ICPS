@@ -4,7 +4,7 @@
 
 import socket
 import pickle 
-from FedAVG import FedAvg
+from Aggregation.FedAVG import FedAvg
 import select
 from _thread import *
 

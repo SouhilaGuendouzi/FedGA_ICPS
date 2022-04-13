@@ -10,13 +10,13 @@ import numpy as np
 from torchvision import datasets, transforms
 import torch
 from torch.utils.data import DataLoader, Dataset
-from Options import args_parser
-from Model import CNNMnist 
-from Client import Client , LocalUpdate 
-from FedAVG import FedAvg
-from FedGA import FedGA
-from FedPer import FedPer
-
+from utils.Options import args_parser
+from Model import Model 
+from Client import Client 
+from Aggregation.FedAVG import FedAvg
+from Aggregation.FedGA import FedGA
+from Aggregation.FedPer import FedPer
+from utils.Split import DatasetSplit
 
 
 if __name__ == '__main__':
@@ -30,23 +30,33 @@ if __name__ == '__main__':
     dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
     dataset_test = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
     test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
+    dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
     dataset_test = DataLoader(dataset=test_subset, shuffle=True)
     dataset_validate = DataLoader(dataset=val_subset, shuffle=False)
 
 
 
-    num_items = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
-    net_glob = CNNMnist(args=args).to(args.device)
-    net_glob.train() # au debut tous les clients ont le meme model
-    # split dataset with iid 
-    dict_users, all_idxs = {}, [i for i in range(len(dataset_train))]
+    num_items_train = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
+    num_items_test= int(len(dataset_test)/args.num_users)
+    net_glob = Model(args=args).to(args.device)
+    net_glob.train() # au debut tous les clients ont le meme model # split dataset with iid 
+    dict_users, all_idxs_train, all_idxs_test = {}, [i for i in range(len(dataset_train))], [i for i in range(len(dataset_test))]
+
+
+
     for i in range(args.num_users):
-        dataset_index_client= set(np.random.choice(all_idxs, num_items, replace=False)) #la liste des index des itemes dans une dataset
-        client=Client(i,net_glob, dataset_index_client)
-        # for each client_i, choose different samples without replacement
+        
+        dataset_train_index_client= set(np.random.choice(all_idxs_train, num_items_train, replace=False)) #la liste des index des itemes dans une dataset
+        dataset_test_index_client= set(np.random.choice(all_idxs_test, num_items_test, replace=False)) #la liste des index des itemes dans une dataset
+
+        train_dataset_client=DatasetSplit( dataset_train,  dataset_train_index_client)
+        test_dataset_client=DatasetSplit( dataset_test,  dataset_test_index_client)
+
+        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  # il manque base and perso
         dict_users[i] = client
-        #print(dict_users[i].dataset)
-        all_idxs = list(set(all_idxs) - dict_users[i].dataset) # Update the list of sample indexes
+      
+        all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
+        all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
 
     
 
@@ -62,13 +72,20 @@ if __name__ == '__main__':
     val_acc_list, net_list = [], []
     loss_locals = []
     w_locals = [w_glob for i in range(args.num_users)]
+    f1bias=[]
+    f2bias=[]
+    f2weight=[]
+    f1weight=[]
 
     m = max(int(args.frac * args.num_users), 1)
     ids_users = np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
+
     w_locals = [w_glob for i in range(args.num_users)]
-    for id in ids_users: #idx of a user
-            local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[id].dataset)
-            w, loss = local.train(net=copy.deepcopy(net_glob).to(args.device))
+
+   
+    for id in range(len(ids_users)): #idx of a user
+            w, loss =  dict_users[id].local_update(w_glob)
+
             if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
             else:
@@ -83,8 +100,7 @@ if __name__ == '__main__':
        print("Aggregation over all clients")
        w_locals = [w_glob for i in range(args.num_users)]
 
-    print('number of interation',args.epochs)
-    print('number of clients',m)
+
     for iter in range(args.epochs): 
         i=0 
         print('iteration',iter) 
@@ -93,16 +109,39 @@ if __name__ == '__main__':
             w_locals = []
         m = max(int(args.frac * args.num_users), 1)
   
-        ids_users = np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
-        for id in ids_users: #idx of a user
-            local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[id].dataset)
-            w, loss = local.train(net=copy.deepcopy(net_glob).to(args.device))
-            if args.all_clients:
+        for id in range(len(ids_users)): #idx of a user
+         
+          if  (args.aggr=='fedPer'):
+              for id in ids_users: #idx of a user
+                   base=w_glob
+                   base.update(w_locals[i]['fc1.weight'])
+                   base.update(w_locals[i]['fc1.bias'])
+                   base.update(w_locals[i]['fc2.weight'])
+                   base.update(w_locals[i]['fc2.bias'])
+                   w, loss = ids_users[i].local_update(w_glob)
+
+                   if args.all_clients:
+                     w_locals[id] = copy.deepcopy(w)
+                   else:
+                     w_locals.append(copy.deepcopy(w))
+                   loss_locals.append(copy.deepcopy(loss))
+              loss_avg = sum(loss_locals) / len(loss_locals)
+
+                  
+          else :    
+            for id in ids_users: #idx of a user
+
+              w, loss = ids_users[i].local_update(w_glob)
+
+              if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
-            else:
+              else:
                 w_locals.append(copy.deepcopy(w))
-            loss_locals.append(copy.deepcopy(loss))
-        loss_avg = sum(loss_locals) / len(loss_locals)
+              loss_locals.append(copy.deepcopy(loss))
+
+            loss_avg = sum(loss_locals) / len(loss_locals)
+
+
         print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
         loss_train.append(loss_avg)
         w_locals= np.array(w_locals)
@@ -124,8 +163,29 @@ if __name__ == '__main__':
        
              w_glob = FedGA(initial_population,net_glob,dataset_validate)
         elif (args.aggr=='fedPer'):
-            
+           
+           
+            for i in range(len(w_locals)):
+
+             f1bias[i]=w_locals[i].get('fc1.bias')
+             f2bias[i]=w_locals[i].get('fc2.bias')
+             f1weight[i]=w_locals[i].get('fc1.weight')
+             f2weight[i]=w_locals[i].get('fc2.weight')
+             del[w_locals[i]['fc1.bias']]
+             del[w_locals[i]['fc1.weight']]
+             del[w_locals[i]['fc2.bias']]
+             del[w_locals[i]['fc2.weight']]
+
+
             w_glob = FedPer(w_locals)
+
+            for i in range(len(w_locals)):
+               w_locals[i]['fc1.weight']= f1weight[i]
+               w_locals[i]['fc1.bias']= f2bias[i]
+               w_locals[i]['fc2.weight']=f2weight[i]
+               w_locals[i]['fc2.bias']=f2bias
+
+
         net_glob.load_state_dict(w_glob)
 
         # print loss

@@ -1,0 +1,19 @@
+
+
+from torch.utils.data import  Dataset
+
+
+class DatasetSplit(Dataset):
+    def __init__(self, dataset, idxs):
+        #print(dataset)
+        self.dataset = dataset
+        self.idxs = list(idxs)
+        # print(len(self.idxs))
+
+    def __len__(self):
+        return len(self.idxs)
+
+    def __getitem__(self, item):
+        image, label = self.dataset[self.idxs[item]]
+        return image, label
+
