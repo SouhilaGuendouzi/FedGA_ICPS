@@ -30,16 +30,16 @@ if __name__ == '__main__':
     dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
     dataset_test = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
     test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
-    dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
-    dataset_test = DataLoader(dataset=test_subset, shuffle=True)
-    dataset_validate = DataLoader(dataset=val_subset, shuffle=False)
+    #dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
+    #dataset_test = DataLoader(dataset=test_subset, shuffle=True)
+    dataset_validate = DataLoader(dataset=val_subset, shuffle=True)
 
 
-
+    # split dataset with iid 
     num_items_train = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
     num_items_test= int(len(dataset_test)/args.num_users)
     net_glob = Model(args=args).to(args.device)
-    net_glob.train() # au debut tous les clients ont le meme model # split dataset with iid 
+    net_glob.train() # au debut tous les clients ont le meme model 
     dict_users, all_idxs_train, all_idxs_test = {}, [i for i in range(len(dataset_train))], [i for i in range(len(dataset_test))]
 
 
@@ -49,11 +49,17 @@ if __name__ == '__main__':
         dataset_train_index_client= set(np.random.choice(all_idxs_train, num_items_train, replace=False)) #la liste des index des itemes dans une dataset
         dataset_test_index_client= set(np.random.choice(all_idxs_test, num_items_test, replace=False)) #la liste des index des itemes dans une dataset
 
-        train_dataset_client=DatasetSplit( dataset_train,  dataset_train_index_client)
-        test_dataset_client=DatasetSplit( dataset_test,  dataset_test_index_client)
+        train_dataset_client=DatasetSplit( dataset_train,  idxs=dataset_train_index_client)
+        test_dataset_client=DatasetSplit( dataset_test, idxs= dataset_test_index_client)
+        
+        #
+        # train_dataset_client=DataLoader(dataset=DatasetSplit( dataset_train,  idxs=dataset_train_index_client),shuffle=True,batch_size=args.local_bs) #,batch_size=args.local_bs
+        test_dataset_client=DataLoader(dataset=test_dataset_client, shuffle=True)
+     
 
-        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  # il manque base and perso
-        dict_users[i] = client
+
+        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  
+        dict_users[i] = client 
       
         all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
         all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
@@ -65,13 +71,10 @@ if __name__ == '__main__':
 
     # training
     loss_train = []
-    cv_loss, cv_acc = [], []
-    val_loss_pre, counter = 0, 0
-    net_best = None
-    best_loss = None
-    val_acc_list, net_list = [], []
     loss_locals = []
     w_locals = [w_glob for i in range(args.num_users)]
+
+    # personnalized layers
     f1bias=[]
     f2bias=[]
     f2weight=[]
@@ -80,10 +83,8 @@ if __name__ == '__main__':
     m = max(int(args.frac * args.num_users), 1)
     ids_users = np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
 
-    w_locals = [w_glob for i in range(args.num_users)]
-
-   
-    for id in range(len(ids_users)): #idx of a user
+    
+    for id in ids_users: #idx of a user
             w, loss =  dict_users[id].local_update(w_glob)
 
             if args.all_clients:
@@ -108,17 +109,15 @@ if __name__ == '__main__':
         if not args.all_clients:
             w_locals = []
         m = max(int(args.frac * args.num_users), 1)
-  
-        for id in range(len(ids_users)): #idx of a user
-         
-          if  (args.aggr=='fedPer'):
+       
+        if  (args.aggr=='fedPer'):
               for id in ids_users: #idx of a user
                    base=w_glob
-                   base.update(w_locals[i]['fc1.weight'])
-                   base.update(w_locals[i]['fc1.bias'])
-                   base.update(w_locals[i]['fc2.weight'])
-                   base.update(w_locals[i]['fc2.bias'])
-                   w, loss = ids_users[i].local_update(w_glob)
+                   base.update(w_locals[id]['fc1.weight'])
+                   base.update(w_locals[id]['fc1.bias'])
+                   base.update(w_locals[id]['fc2.weight'])
+                   base.update(w_locals[id]['fc2.bias'])
+                   w, loss = dict_users[id].local_update(w_glob)
 
                    if args.all_clients:
                      w_locals[id] = copy.deepcopy(w)
@@ -128,10 +127,10 @@ if __name__ == '__main__':
               loss_avg = sum(loss_locals) / len(loss_locals)
 
                   
-          else :    
+        else :    
             for id in ids_users: #idx of a user
 
-              w, loss = ids_users[i].local_update(w_glob)
+              w, loss = dict_users[i].local_update(w_glob)
 
               if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
@@ -195,7 +194,7 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(range(len(loss_train)), loss_train)
     plt.ylabel('train_loss')
-    plt.savefig('./save/fed_{}_{}_{}_C{}_iidFEDGA{}.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid))
+    plt.savefig('./save/fed_{}_{}_.png'.format(args.aggre, args.iid))
 
     # testing
     net_glob.eval()

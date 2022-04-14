@@ -71,8 +71,5 @@ class Client(object):
         test_loss /= len(self.datasetTest.dataset)
         accuracy = 100.00 * correct / len(self.datasetTest.dataset)
 
-        if self.args.verbose:
-            print('\nTest set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(
-            test_loss, correct, len(self.datasetTest.dataset), accuracy))
         return accuracy, test_loss
 

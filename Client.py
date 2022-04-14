@@ -24,28 +24,26 @@ class Client(object):
      def local_update(self,w):
 
          loss_func = nn.CrossEntropyLoss()
-         ldr_train = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+       
+         self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.model.load_state_dict(w)
          self.model.train()
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []
          
          for iter in range(self.args.local_ep):
-            print('epoch',iter)
+           
             batch_loss = []
             
-            for batch_idx, (images, labels) in enumerate(ldr_train):
+            for batch_idx, (images, labels) in enumerate(self.data):
+                
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
                 self.model.zero_grad()
                 log_probs = self.model(images)
                 loss = loss_func(log_probs, labels)
                 loss.backward()
                 optimizer.step()
-                if self.args.verbose and batch_idx % 10 == 0:
-                    print('Update Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        iter, batch_idx * len(images), len(ldr_train.dataset),
-                               100. * batch_idx / len(ldr_train), loss.item()))
-             
+
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
       
