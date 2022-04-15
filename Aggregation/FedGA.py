@@ -25,7 +25,7 @@ def fitness(solution, sol_idx):
           
         loss /= len(dataset.dataset)
 
-        loss=  1.0 / (loss.item())
+        loss=  1.0 / (loss) #.item()
         
     
         return loss
