@@ -101,10 +101,12 @@ class Client(object):
          self.w=self.model.state_dict()
         
          try :
+
           del[self.glob['fc1.bias']]
           del[self.glob['fc1.weight']]
           del[self.glob['fc2.bias']]
           del[self.glob['fc2.weight']]
+          
          except:
             print("vide")
 
