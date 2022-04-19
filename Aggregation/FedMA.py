@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 
-def FedMA(w,numLayer):
+def FedMA(clients):
   
 
     w_base = copy.deepcopy(w[0])

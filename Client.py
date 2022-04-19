@@ -23,11 +23,13 @@ class Client(object):
     
      
      def local_update(self,w):
-
+      
          loss_func = nn.CrossEntropyLoss()
        
          self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
-         self.model.load_state_dict(w)
+      
+         self.w=w
+         self.model.load_state_dict(self.w)
          self.model.train()
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []

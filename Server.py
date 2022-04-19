@@ -16,6 +16,7 @@ from Client import Client
 from Aggregation.FedAVG import FedAvg
 from Aggregation.FedGA import FedGA
 from Aggregation.FedPer import FedPer
+from Aggregation.FedMA import FedMA
 from utils.Split import DatasetSplit
 
 
@@ -31,7 +32,7 @@ if __name__ == '__main__':
     test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
     #dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
     #dataset_test = DataLoader(dataset=test_subset, shuffle=True)
-    dataset_validate = DataLoader(dataset=val_subset, shuffle=True,batch_size=args.local_bs)
+    dataset_validate = DataLoader(dataset=val_subset, shuffle=True,batch_size=60)
     print(len(dataset_validate))
 
 
@@ -52,12 +53,7 @@ if __name__ == '__main__':
         train_dataset_client=DatasetSplit( dataset_train,  idxs=dataset_train_index_client)
         test_dataset_client=DatasetSplit( dataset_test, idxs= dataset_test_index_client)
         
-        #
         # train_dataset_client=DataLoader(dataset=DatasetSplit( dataset_train,  idxs=dataset_train_index_client),shuffle=True,batch_size=args.local_bs) #,batch_size=args.local_bs
-   
-     
-
-
         client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  
         dict_users[i] = client 
       
@@ -85,19 +81,22 @@ if __name__ == '__main__':
        print("Aggregation over all clients")
        w_locals = [w_glob for i in range(args.num_users)]
 
-
-    for iter in range(args.epochs): 
+    if (args.aggr=='fedMA'):
+           clients=FedMA(dict_users)
+    else :         
+     for iter in range(args.epochs): 
         i=0 
         print('iteration',iter) 
         loss_locals = []
         if not args.all_clients:
             w_locals = []
        
-        if (args.aggr=='fedMA'):
-            for id in ids_users: #idx of a user
-         
-
-        elif  (args.aggr=='fedPer'):
+       
+        '''
+        For Local updates
+        
+        '''
+        if  (args.aggr=='fedPer'):
               for id in ids_users: #idx of a user
                 
                    w, loss = dict_users[id].local_updatePer(w_glob)
@@ -112,24 +111,32 @@ if __name__ == '__main__':
                   
         else :    
             for id in ids_users: #idx of a user
-
+              print(id)
               w, loss = dict_users[id].local_update(w_glob)
-
               if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
               else:
                 w_locals.append(copy.deepcopy(w))
               loss_locals.append(copy.deepcopy(loss))
-
             loss_avg = sum(loss_locals) / len(loss_locals)
+            print(loss_avg)
 
 
         print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
         loss_train.append(loss_avg)
         w_locals= np.array(w_locals)
+
+
+
+        '''
+        For aggregation
+        
+        '''
+
         if (args.aggr=='fedAVG'):
             # update global weights
             w_glob = FedAvg(w_locals)
+
         elif (args.aggr=='fedGA'):
              initial_population=w_locals
        
@@ -142,11 +149,11 @@ if __name__ == '__main__':
                          weight= np.concatenate((weight, array), axis=0)
                          initial_population[i]= np.array(weight,dtype='f')
                 i=i+1 # next weight vector (user)
-       
              w_glob = FedGA(initial_population,net_glob,dataset_validate)
+
+
         elif (args.aggr=='fedPer'):
-           
-           w_glob = FedPer(w_locals)
+            w_glob = FedPer(w_locals)
 
         net_glob.load_state_dict(w_glob)
 
@@ -154,7 +161,7 @@ if __name__ == '__main__':
         
 
     # plot loss curve
-    for id in ids_users: #idx of a user
+     for id in ids_users: #idx of a user
             w, loss =  dict_users[id].local_update(w_glob)
 
             if args.all_clients:

@@ -11,8 +11,10 @@ import pygad.torchga as tg
 loss_function = nn.CrossEntropyLoss()
 
 def fitness(solution, sol_idx):
+
    
         loss=0.0
+      
       
         model_weights_dict = tg.model_weights_as_dict(model=model, weights_vector=solution)
         model.load_state_dict(model_weights_dict)
@@ -25,7 +27,7 @@ def fitness(solution, sol_idx):
           
         loss /= len(dataset.dataset)
 
-        loss=  1.0 / (loss) #.item()
+        loss=  1.0 / (loss.item()) #
         
     
         return loss
