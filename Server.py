@@ -30,19 +30,19 @@ if __name__ == '__main__':
     dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
     dataset_test = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
     test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
-    #dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
-    #dataset_test = DataLoader(dataset=test_subset, shuffle=True)
+    dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
+    dataset_test = DataLoader(dataset=test_subset, shuffle=True)
     dataset_validate = DataLoader(dataset=val_subset, shuffle=True,batch_size=60)
     print(len(dataset_validate))
 
-
+    '''
     # split dataset with iid 
     num_items_train = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
     num_items_test= int(len(dataset_test)/args.num_users)
     net_glob = Model(args=args).to(args.device)
     net_glob.train() 
     dict_users, all_idxs_train, all_idxs_test = {}, [i for i in range(len(dataset_train))], [i for i in range(len(dataset_test))]
-
+    
 
 
     for i in range(args.num_users):
@@ -59,6 +59,67 @@ if __name__ == '__main__':
       
         all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
         all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
+
+       '''
+
+    """
+    Sample non-I.I.D client data from MNIST dataset
+    :param dataset:
+    :param num_users:
+    :return:
+    """
+
+    idx_train = [i for i in range(60000)]
+    idx_test = [i for i in range(10000)]
+    dict_users , idxs   = {},  np.arange(num_shards*num_imgs)
+    
+    labels = dataset.train_labels.numpy()
+
+    # sort labels
+    idxs_labels = np.vstack((idxs, labels))
+    idxs_labels = idxs_labels[:,idxs_labels[1,:].argsort()]
+    idxs = idxs_labels[0,:]
+
+    # divide and assign
+    for i in range(num_users):
+        rand_set = set(np.random.choice(idx_shard, 2, replace=False))
+        idx_shard = list(set(idx_shard) - rand_set)
+        for rand in rand_set:
+            dict_users[i] = np.concatenate((dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
+    
+
+    num_items_train = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
+    num_items_test= int(len(dataset_test)/args.num_users)
+    net_glob = Model(args=args).to(args.device)
+    net_glob.train() 
+    dict_users, all_idxs_train, all_idxs_test = {}, [i for i in range(len(dataset_train))], [i for i in range(len(dataset_test))]
+    
+
+
+    for i in range(args.num_users):
+        
+        dataset_train_index_client= set(np.random.choice(all_idxs_train, num_items_train, replace=False)) #la liste des index des itemes dans une dataset
+        dataset_test_index_client= set(np.random.choice(all_idxs_test, num_items_test, replace=False)) #la liste des index des itemes dans une dataset
+
+        train_dataset_client=DatasetSplit( dataset_train,  idxs=dataset_train_index_client)
+        test_dataset_client=DatasetSplit( dataset_test, idxs= dataset_test_index_client)
+        
+        # train_dataset_client=DataLoader(dataset=DatasetSplit( dataset_train,  idxs=dataset_train_index_client),shuffle=True,batch_size=args.local_bs) #,batch_size=args.local_bs
+        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  
+        dict_users[i] = client 
+      
+        all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
+        all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
+
+
+
+
+
+
+
+###################################################################################################################
+
+
 
     # copy weights
     w_glob = net_glob.state_dict()
@@ -202,6 +263,3 @@ if __name__ == '__main__':
    
     print("Average Testing accuracy: {:.2f}".format(acc_test_avg))
     print("Average Ttraining accuracy: {:.2f}".format(acc_train_avg))
-   
-    
-    
