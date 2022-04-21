@@ -45,11 +45,11 @@ def FedGA(w,modell,datasett):
    initial_population= w 
    initial_population=initial_population.tolist()
    num_generations =5# Number of generations.
-   num_parents_mating = 5 # Number of solutions to be selected as parents in the mating pool.
+   num_parents_mating = 3 # Number of solutions to be selected as parents in the mating pool.
   
   
    #print(initial_population)
-   parent_selection_type = "sss" # Type of parent selection.
+   parent_selection_type = "rank" # Type of parent selection.
    crossover_type = "single_point" # Type of the crossover operator.
    mutation_type = "random" # Type of the mutation operator.
    mutation_percent_genes = 10 # Percentage of genes to mutate. This parameter has no action if the parameter mutation_num_genes exists.

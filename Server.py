@@ -19,6 +19,7 @@ from Aggregation.FedPer import FedPer
 from Aggregation.FedMA import FedMA
 from utils.Split import DatasetSplit
 from create_MNIST_datasets import get_MNIST, plot_samples
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # parse args
@@ -29,7 +30,7 @@ if __name__ == '__main__':
     net_glob.train() 
 ###################################################################################################################
     mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("non_iid",
-    n_samples_train =2000, n_samples_test=1000, n_clients =3, 
+    n_samples_train =2000, n_samples_test=1000, n_clients =4, 
     batch_size =25, shuffle =True)
     dict_users={}
     client=Client(0,net_glob, mnist_non_iid_train_dls[0],mnist_non_iid_test_dls[0],args)
@@ -38,6 +39,10 @@ if __name__ == '__main__':
     dict_users[1] = client    
     client=Client(2,net_glob, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)
     dict_users[2] = client  
+    plot_samples(next(iter(mnist_non_iid_train_dls[0])), 0, "Client 1")
+    plot_samples(next(iter(mnist_non_iid_train_dls[1])), 0, "Client 2")
+    plot_samples(next(iter(mnist_non_iid_train_dls[2])), 0, "Client 3")
+    dataset_validate=mnist_non_iid_train_dls[3]
     
    
 
