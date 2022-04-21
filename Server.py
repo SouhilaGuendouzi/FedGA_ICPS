@@ -11,54 +11,36 @@ from torchvision import datasets, transforms
 import torch
 from torch.utils.data import DataLoader, Dataset
 from utils.Options import args_parser
-from Model import Model 
+from Model import Model_MNIST, CNNCifar, Model_Fashion 
 from Client import Client 
 from Aggregation.FedAVG import FedAvg
 from Aggregation.FedGA import FedGA
 from Aggregation.FedPer import FedPer
 from Aggregation.FedMA import FedMA
 from utils.Split import DatasetSplit
-
+from create_MNIST_datasets import get_MNIST, plot_samples
 
 if __name__ == '__main__':
     # parse args
     args = args_parser()
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
 
-    # load dataset and split users
-    trans_mnist = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-    dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
-    dataset_test = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
-    test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
-    #dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
-    #dataset_test = DataLoader(dataset=test_subset, shuffle=True)
-    dataset_validate = DataLoader(dataset=val_subset, shuffle=True,batch_size=60)
-    print(len(dataset_validate))
-
-
-    # split dataset with iid 
-    num_items_train = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
-    num_items_test= int(len(dataset_test)/args.num_users)
-    net_glob = Model(args=args).to(args.device)
+    net_glob = Model_MNIST(args=args).to(args.device)
     net_glob.train() 
-    dict_users, all_idxs_train, all_idxs_test = {}, [i for i in range(len(dataset_train))], [i for i in range(len(dataset_test))]
+###################################################################################################################
+    mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("non_iid",
+    n_samples_train =2000, n_samples_test=1000, n_clients =3, 
+    batch_size =25, shuffle =True)
+    dict_users={}
+    client=Client(0,net_glob, mnist_non_iid_train_dls[0],mnist_non_iid_test_dls[0],args)
+    dict_users[0] = client 
+    client=Client(1,net_glob, mnist_non_iid_train_dls[1],mnist_non_iid_test_dls[1],args)
+    dict_users[1] = client    
+    client=Client(2,net_glob, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)
+    dict_users[2] = client  
+    
+   
 
-
-
-    for i in range(args.num_users):
-        
-        dataset_train_index_client= set(np.random.choice(all_idxs_train, num_items_train, replace=False)) #la liste des index des itemes dans une dataset
-        dataset_test_index_client= set(np.random.choice(all_idxs_test, num_items_test, replace=False)) #la liste des index des itemes dans une dataset
-
-        train_dataset_client=DatasetSplit( dataset_train,  idxs=dataset_train_index_client)
-        test_dataset_client=DatasetSplit( dataset_test, idxs= dataset_test_index_client)
-        
-        # train_dataset_client=DataLoader(dataset=DatasetSplit( dataset_train,  idxs=dataset_train_index_client),shuffle=True,batch_size=args.local_bs) #,batch_size=args.local_bs
-        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  
-        dict_users[i] = client 
-      
-        all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
-        all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
 
     # copy weights
     w_glob = net_glob.state_dict()
@@ -111,7 +93,7 @@ if __name__ == '__main__':
                   
         else :    
             for id in ids_users: #idx of a user
-              print(id)
+              
               w, loss = dict_users[id].local_update(w_glob)
               if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
@@ -202,6 +184,3 @@ if __name__ == '__main__':
    
     print("Average Testing accuracy: {:.2f}".format(acc_test_avg))
     print("Average Ttraining accuracy: {:.2f}".format(acc_train_avg))
-   
-    
-    

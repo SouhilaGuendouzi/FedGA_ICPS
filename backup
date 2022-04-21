@@ -1,0 +1,49 @@
+  # load dataset and split users
+    trans_mnist = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+    dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True, transform=trans_mnist)
+    dataset_test = datasets.MNIST('../data/mnist/', train=False, download=True, transform=trans_mnist)
+    test_subset, val_subset = torch.utils.data.random_split(dataset_test, [8000, 2000], generator=torch.Generator().manual_seed(1))
+    dataset_train= DataLoader(dataset= dataset_train, shuffle=True)
+    dataset_test = DataLoader(dataset=test_subset, shuffle=True)
+    dataset_validate = DataLoader(dataset=val_subset, shuffle=True,batch_size=60)
+    print(len(dataset_validate))
+
+ 
+    # split dataset with iid 
+    num_items_train = int(len(dataset_train)/args.num_users)  # dataset size is equal  for all users 
+    num_items_test= int(len(dataset_test)/args.num_users)
+    net_glob = Model_MNIST(args=args).to(args.device)
+    net_glob.train() 
+    dict_users, all_idxs_train, all_idxs_test = {}, [i for i in range(len(dataset_train))], [i for i in range(len(dataset_test))]
+    
+
+
+    for i in range(args.num_users):
+        
+        dataset_train_index_client= set(np.random.choice(all_idxs_train, num_items_train, replace=False)) #la liste des index des itemes dans une dataset
+        dataset_test_index_client= set(np.random.choice(all_idxs_test, num_items_test, replace=False)) #la liste des index des itemes dans une dataset
+
+        train_dataset_client=DatasetSplit( dataset_train,  idxs=dataset_train_index_client)
+        test_dataset_client=DatasetSplit( dataset_test, idxs= dataset_test_index_client)
+        
+        # train_dataset_client=DataLoader(dataset=DatasetSplit( dataset_train,  idxs=dataset_train_index_client),shuffle=True,batch_size=args.local_bs) #,batch_size=args.local_bs
+        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  
+        dict_users[i] = client 
+      
+        all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
+        all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
+
+    for i in range(args.num_users):
+        
+        dataset_train_index_client= set(np.random.choice(all_idxs_train, num_items_train, replace=False)) #la liste des index des itemes dans une dataset
+        dataset_test_index_client= set(np.random.choice(all_idxs_test, num_items_test, replace=False)) #la liste des index des itemes dans une dataset
+
+        train_dataset_client=DatasetSplit( dataset_train,  idxs=dataset_train_index_client)
+        test_dataset_client=DatasetSplit( dataset_test, idxs= dataset_test_index_client)
+        
+        # train_dataset_client=DataLoader(dataset=DatasetSplit( dataset_train,  idxs=dataset_train_index_client),shuffle=True,batch_size=args.local_bs) #,batch_size=args.local_bs
+        client=Client(i,net_glob, train_dataset_client,test_dataset_client,args)  
+        dict_users[i] = client 
+      
+        all_idxs_train = list(set(all_idxs_train) - dataset_train_index_client) # Update the list of sample indexes
+        all_idxs_test = list(set(all_idxs_test) - dataset_test_index_client) # Update the list of sample indexes
