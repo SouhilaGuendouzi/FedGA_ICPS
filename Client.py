@@ -3,7 +3,7 @@ from utils.Options import args_parser
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from Model import Model
+
 import torch
 from torch import nn
 import copy
@@ -26,7 +26,8 @@ class Client(object):
       
          loss_func = nn.CrossEntropyLoss()
        
-         self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         self.data = self.datasetTrain
       
          self.w=w
          self.model.load_state_dict(self.w)
@@ -70,7 +71,8 @@ class Client(object):
          self.w.update(self.glob)
 
 
-         self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         self.data = self.datasetTrain
          self.model.load_state_dict(self.w)
          self.model.train()
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
@@ -115,7 +117,9 @@ class Client(object):
          self.w.update(self.glob)
 
 
-         self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         self.data = self.datasetTrain
+         print(len(self.data))
          self.model.load_state_dict(self.w)
          self.model.train()
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
@@ -141,7 +145,8 @@ class Client(object):
 
      def test_img(self,dataset):
         self.model.eval()
-        self.data = DataLoader(dataset=dataset, shuffle=True)
+        #self.data = DataLoader(dataset=dataset, shuffle=True)
+        self.data=dataset
        
         # testing
         test_loss = 0
