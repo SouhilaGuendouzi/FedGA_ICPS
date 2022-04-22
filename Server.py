@@ -56,15 +56,11 @@ if __name__ == '__main__':
 
     # copy weights
     w_glob = net_glob.state_dict()
-
-
     # training
     loss_train = []
     loss_locals = []
     w_locals = [w_glob for i in range(args.num_users)]
-
     # personnalized layers
-
     #m = max(int(args.frac * args.num_users), 1)
     ids_users = range(args.num_users)#np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
 
@@ -75,10 +71,8 @@ if __name__ == '__main__':
        print("Aggregation over all clients")
        w_locals = [w_glob for i in range(args.num_users)]
 
-    if (args.aggr=='fedMA'):
-           clients=FedMA(dict_users)
-    else :         
-     for iter in range(args.epochs): 
+      
+    for iter in range(args.epochs): 
         i=0 
         print('iteration',iter) 
         loss_locals = []
@@ -128,7 +122,7 @@ if __name__ == '__main__':
         '''
 
         if (args.aggr=='fedAVG'):
-            # update global weights
+         
             w_glob = FedAvg(w_locals)
 
         elif (args.aggr=='fedGA'):
@@ -151,12 +145,25 @@ if __name__ == '__main__':
 
         net_glob.load_state_dict(w_glob)
 
-        # print loss
+       
         
-
-    # plot loss curve
-     for id in ids_users: 
+    if (args.aggr=='fedAVG' or args.aggr=='fedGA' ):
+         # plot loss curve
+        for id in ids_users: 
             w, loss =  dict_users[id].local_update(w_glob)
+
+            if args.all_clients:
+                w_locals[id] = copy.deepcopy(w)
+            else:
+                w_locals.append(copy.deepcopy(w))
+            loss_locals.append(copy.deepcopy(loss))
+     
+     
+   
+    else : 
+
+       for id in ids_users: 
+            w, loss =  dict_users[id].local_updatePer(w_glob)
 
             if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
@@ -165,7 +172,8 @@ if __name__ == '__main__':
             loss_locals.append(copy.deepcopy(loss))
 
     loss_avg = sum(loss_locals) / len(loss_locals)
-    print('After all itrations')
+
+    print('At the End of Federated Learning')
     print(' Average loss {:.3f}'.format(loss_avg))
     loss_train.append(loss_avg)
 
