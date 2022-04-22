@@ -31,8 +31,8 @@ if __name__ == '__main__':
 ###################################################################################################################
 
     mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("non_iid",
-    n_samples_train =20000, n_samples_test=10000, n_clients =4, 
-    batch_size =25, shuffle =True)
+    n_samples_train =2000, n_samples_test=1000, n_clients =4, 
+    batch_size =1000, shuffle =True)
     dict_users={}
     client=Client(0,net_glob, mnist_non_iid_train_dls[0],mnist_non_iid_test_dls[0],args)
     dict_users[0] = client 
@@ -42,15 +42,18 @@ if __name__ == '__main__':
     dict_users[2] = client  
     client=Client(3,net_glob, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)
     dict_users[3] = client
+    c= dict_users[0]
+    dict_users[0]= dict_users[3]
+    dict_users[3]=c
 
+    
     print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
     print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
     
 ###################################################################################################################  
     
     train_Server, dataset_validate = get_MNIST("server",
-     n_samples_train =20000, n_samples_test=10000, n_clients =4, 
-     batch_size =25, shuffle =True)
+     n_samples_train =20000, n_samples_test=10000)
    
 
 
@@ -59,14 +62,16 @@ if __name__ == '__main__':
     # training
     loss_train = []
     loss_locals = []
+
+
+
+
     w_locals = [w_glob for i in range(args.num_users)]
     # personnalized layers
     #m = max(int(args.frac * args.num_users), 1)
     ids_users = range(args.num_users)#np.random.choice(range(args.num_users), m, replace=False) # choose m users from num_users
 
     
-   
-
     if args.all_clients: 
        print("Aggregation over all clients")
        w_locals = [w_glob for i in range(args.num_users)]
@@ -76,6 +81,7 @@ if __name__ == '__main__':
         i=0 
         print('iteration',iter) 
         loss_locals = []
+   
         if not args.all_clients:
             w_locals = []
        
@@ -86,28 +92,41 @@ if __name__ == '__main__':
         '''
         if  (args.aggr=='fedPer'):
               for id in ids_users: #idx of a user
-                
                    w, loss = dict_users[id].local_updatePer(w_glob)
-
                    if args.all_clients:
                      w_locals[id] = copy.deepcopy(w)
                    else:
                      w_locals.append(copy.deepcopy(w))
                    loss_locals.append(copy.deepcopy(loss))
+                   acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
+                   print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+                   acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
+                   print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
+                   
               loss_avg = sum(loss_locals) / len(loss_locals)
+           
+
 
                   
         else :    
             for id in ids_users: #idx of a user
               
               w, loss = dict_users[id].local_update(w_glob)
+    
               if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
               else:
                 w_locals.append(copy.deepcopy(w))
               loss_locals.append(copy.deepcopy(loss))
+              acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
+              print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+              acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
+              print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
+             
+              
             loss_avg = sum(loss_locals) / len(loss_locals)
             print(loss_avg)
+           
 
 
         print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
@@ -149,27 +168,39 @@ if __name__ == '__main__':
         
     if (args.aggr=='fedAVG' or args.aggr=='fedGA' ):
          # plot loss curve
-        for id in ids_users: 
-            w, loss =  dict_users[id].local_update(w_glob)
-
-            if args.all_clients:
+         for id in ids_users: #idx of a user
+              
+              w, loss  = dict_users[id].local_update(w_glob)
+              
+           
+              if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
-            else:
+              else:
                 w_locals.append(copy.deepcopy(w))
-            loss_locals.append(copy.deepcopy(loss))
-     
-     
-   
+              loss_locals.append(copy.deepcopy(loss))
+              acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
+              print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+              acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
+              print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
+         
+         loss_avg = sum(loss_locals) / len(loss_locals)
+         print(loss_avg)
+            
     else : 
 
        for id in ids_users: 
             w, loss =  dict_users[id].local_updatePer(w_glob)
+     
 
             if args.all_clients:
                 w_locals[id] = copy.deepcopy(w)
             else:
                 w_locals.append(copy.deepcopy(w))
             loss_locals.append(copy.deepcopy(loss))
+            acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
+            print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+            acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
+            print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
 
     loss_avg = sum(loss_locals) / len(loss_locals)
 
@@ -184,26 +215,26 @@ if __name__ == '__main__':
     plt.savefig('./save/fed_{}_{}_.png'.format(args.aggr, args.iid))
 
     # testing
-    net_glob.eval()
-    print('train Test')
+    #net_glob.eval()
+    #print('train Test')
     
-    acc_train, loss_train= [],[]
-    acc_test, loss_test =[], []
-    for id in ids_users:
-         acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
-         print("Training accuracy for client {} is : {:.2f}".format(id,acc))
-         acc_train.append(acc)
-         loss_train.append(loss)
-
-         acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
-         print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
-         acc_test.append(acc)
-         loss_test.append(loss)
+    #acc_train, loss_train= [],[]
+    #acc_test, loss_test =[], []
+    #for id in ids_users:
+    #     acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
+   #      print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+  #       acc_train.append(acc)
+ #        loss_train.append(loss)
+#
+    #     acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
+     #    print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
+     #    acc_test.append(acc)
+     #    loss_test.append(loss)
         
-    acc_train_avg= sum(acc_train) / len(ids_users)
-    acc_test_avg= sum(acc_test) / len(ids_users)
+    #acc_train_avg= sum(acc_train) / len(ids_users)
+    #acc_test_avg= sum(acc_test) / len(ids_users)
 
 
    
-    print("Average Testing accuracy: {:.2f}".format(acc_test_avg))
-    print("Average Ttraining accuracy: {:.2f}".format(acc_train_avg))
+    #print("Average Testing accuracy: {:.2f}".format(acc_test_avg))
+    #print("Average Ttraining accuracy: {:.2f}".format(acc_train_avg))
