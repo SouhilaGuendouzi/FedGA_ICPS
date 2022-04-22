@@ -95,53 +95,7 @@ class Client(object):
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
       
          return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
-     
-     
-
-     def local_updatePer(self,w_glob):
-
-         loss_func = nn.CrossEntropyLoss()
-         self.glob=copy.deepcopy(w_glob)
-         self.w=self.model.state_dict()
-        
-         try :
-
-          del[self.glob['fc1.bias']]
-          del[self.glob['fc1.weight']]
-          del[self.glob['fc2.bias']]
-          del[self.glob['fc2.weight']]
-          
-         except:
-            print("vide")
-
-         self.w.update(self.glob)
-
-
-         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
-         self.data = self.datasetTrain
-         print(len(self.data))
-         self.model.load_state_dict(self.w)
-         self.model.train()
-         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
-         epoch_loss = []
-         
-         for iter in range(self.args.local_ep):
-           
-            batch_loss = []
-            
-            for batch_idx, (images, labels) in enumerate(self.data):
-                
-                images, labels = images.to(self.args.device), labels.to(self.args.device)
-                self.model.zero_grad()
-                log_probs = self.model(images)
-                loss = loss_func(log_probs, labels)
-                loss.backward()
-                optimizer.step()
-
-                batch_loss.append(loss.item())
-            epoch_loss.append(sum(batch_loss)/len(batch_loss))
-      
-         return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
+    
 
      def test_img(self,dataset):
         self.model.eval()

@@ -29,8 +29,9 @@ if __name__ == '__main__':
     net_glob = Model_MNIST(args=args).to(args.device)
     net_glob.train() 
 ###################################################################################################################
+
     mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("non_iid",
-    n_samples_train =2000, n_samples_test=1000, n_clients =4, 
+    n_samples_train =20000, n_samples_test=10000, n_clients =4, 
     batch_size =25, shuffle =True)
     dict_users={}
     client=Client(0,net_glob, mnist_non_iid_train_dls[0],mnist_non_iid_test_dls[0],args)
@@ -39,11 +40,17 @@ if __name__ == '__main__':
     dict_users[1] = client    
     client=Client(2,net_glob, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)
     dict_users[2] = client  
-    plot_samples(next(iter(mnist_non_iid_train_dls[0])), 0, "Client 1")
-    plot_samples(next(iter(mnist_non_iid_train_dls[1])), 0, "Client 2")
-    plot_samples(next(iter(mnist_non_iid_train_dls[2])), 0, "Client 3")
-    dataset_validate=mnist_non_iid_train_dls[3]
+    client=Client(3,net_glob, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)
+    dict_users[3] = client
+
+    print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
+    print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
     
+###################################################################################################################  
+    
+    train_Server, dataset_validate = get_MNIST("server",
+     n_samples_train =20000, n_samples_test=10000, n_clients =4, 
+     batch_size =25, shuffle =True)
    
 
 
@@ -148,7 +155,7 @@ if __name__ == '__main__':
         
 
     # plot loss curve
-     for id in ids_users: #idx of a user
+     for id in ids_users: 
             w, loss =  dict_users[id].local_update(w_glob)
 
             if args.all_clients:
@@ -160,6 +167,9 @@ if __name__ == '__main__':
     loss_avg = sum(loss_locals) / len(loss_locals)
     print('After all itrations')
     print(' Average loss {:.3f}'.format(loss_avg))
+    loss_train.append(loss_avg)
+
+
     plt.figure()
     plt.plot(range(len(loss_train)), loss_train)
     plt.ylabel('train_loss')
