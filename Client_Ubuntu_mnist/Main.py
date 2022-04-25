@@ -3,8 +3,8 @@ from utils.Options import args_parser
 import torch
 from torchvision import datasets, transforms
 import torch.nn.functional as F
-from Model import ClientModel
-from Client import Client
+from Entities.Model import ClientModel
+from Entities.Edge import Client
 
 
 

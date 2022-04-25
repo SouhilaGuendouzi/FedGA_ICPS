@@ -4,8 +4,8 @@ import torch
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
-from Client import Client
-from Model import ClientModel
+from Entities.Edge import Client
+from Entities.Model import ClientModel
 import pickle
 import socket
 import ipaddress

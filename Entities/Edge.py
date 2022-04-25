@@ -1,25 +1,21 @@
 import socket
-
-from numpy import corrcoef
-from utils.Options import args_parser
-from torchvision import datasets, transforms
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
-
 import torch
 from torch import nn
 import copy
 
-class Client(object):
+class Edge(object):
 
-     def __init__(self, id,model, datasetTRain, datasetTest, args):#,device
+     def __init__(self, id,model, datasetTrain, datasetTest, args):#,device
 
          self.id=id
-         self.datasetTrain = datasetTRain
+         self.datasetTrain = datasetTrain
          self.datasetTest = datasetTest
          self.model=model
          self.accuracy=None
          self.args=args
+         
+
         
          #self.device=device,
     
@@ -38,19 +34,13 @@ class Client(object):
         
          
          for iter in range(self.args.local_ep):
-           
+ 
             batch_loss = []
-   
-            
-            
             for batch_idx, (images, labels) in enumerate(self.data):
-                
+                #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
                 self.model.zero_grad()
                 log_probs = self.model(images)
-                
-              
-
                 loss = loss_func(log_probs, labels)
                 loss.backward()
                 optimizer.step()
@@ -87,18 +77,11 @@ class Client(object):
          self.model.train()
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []
-       
-       
-         
+
          for iter in range(self.args.local_ep):
-           
             batch_loss = []
-            
-            
-          
             for batch_idx, (images, labels) in enumerate(self.data):
-           
-                
+                #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
                 self.model.zero_grad()
                 log_probs = self.model(images)
@@ -120,12 +103,13 @@ class Client(object):
         self.model.eval()
         #self.data = DataLoader(dataset=dataset, shuffle=True)
         self.data=dataset
+        
        
         # testing
         test_loss = 0
         correct = 0
         for idx, (data, target) in enumerate(self.data):
-
+           #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
            log_probs =  self.model(data)
            # sum up batch loss
            test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()

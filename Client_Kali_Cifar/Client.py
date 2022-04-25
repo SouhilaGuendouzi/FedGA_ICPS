@@ -5,7 +5,7 @@ from utils.Options import args_parser
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from Model import ClientModel
+from Entities.Model import ClientModel
 import torch
 from torch import nn
 
