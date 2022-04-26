@@ -23,7 +23,7 @@ if __name__ == '__main__':
     weights_locals=[]
 ############################ Prepare Clients#######################################################################################
 
-    mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("non_iid",
+    mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("iid",
     n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
     batch_size =50, shuffle =True) #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch 
     dict_users={}
