@@ -56,7 +56,7 @@ class Cloud(object):
         elif (self.method_name=='fedPer'):
              self.weights_global=FedPer(self.weights_locals)
 
-        self.global_model.load_state_dict( self.weights_global)
+        self.global_model.load_state_dict(self.weights_global)
 
         return self.global_model
     
@@ -73,11 +73,11 @@ class Cloud(object):
             acc, loss = self.clients_list[id].test_img(self.clients_list[id].datasetTrain)
             self.loss_locals_train[iter][id]=loss
             self.accuracy_locals_train[iter][id]=acc
-            #print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+            print("Training accuracy for client {} is : {:.2f}".format(id,acc))
             acc, loss = self.clients_list[id].test_img(self.clients_list[id].datasetTest)
             self.loss_locals_test[iter][id]=loss
             self.accuracy_locals_test[iter][id]=acc
-            #print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
+            print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
             if self.args.all_clients:
                 self.weights_locals[id]=copy.deepcopy(w)
             else:

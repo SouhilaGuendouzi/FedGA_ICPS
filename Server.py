@@ -23,7 +23,7 @@ if __name__ == '__main__':
     weights_locals=[]
 ############################ Prepare Clients#######################################################################################
 
-    mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("iid",
+    mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_MNIST("non_iid",
     n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
     batch_size =50, shuffle =True) #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch 
     dict_users={}
@@ -55,7 +55,7 @@ if __name__ == '__main__':
       cloud.aggregate(weights_locals,args.aggr)
 
     print("Fin")
-    #weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter+1)
+    weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter)
 
 ########################## Evaluation process #########################################################################################
     print('Evaluation after Federation')
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     acc_test, loss_test =[], []
     for id in range(len(dict_users)): #ids_users
           acc, loss = dict_users[id].test_img(dict_users[id].datasetTrain)
-          #print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+          print("Training accuracy for client {} is : {:.2f}".format(id,acc))
           acc_train.append(acc)
           loss_train.append(loss)
           acc, loss = dict_users[id].test_img(dict_users[id].datasetTest)
@@ -74,9 +74,6 @@ if __name__ == '__main__':
 
     acc_train_avg= sum(acc_train) / len(dict_users)
     acc_test_avg= sum(acc_test) / len(dict_users)
-
-
-
 
     plt = Plot(args,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test)
     plt.get_graph_train('accuracy',args.aggr)

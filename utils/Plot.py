@@ -19,7 +19,7 @@ class Plot(object):
         x=range(self.args.epochs)
         if (eval=='accuracy'):
            for i in range(self.args.epochs):
-    
+              
               client1[i]= self.train_acc[i][0]
               client2[i]= self.train_acc[i][1]
               client3[i]= self.train_acc[i][2]
