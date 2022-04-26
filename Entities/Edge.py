@@ -14,12 +14,8 @@ class Edge(object):
          self.model=model
          self.accuracy=None
          self.args=args
-         
-
-        
-         #self.device=device,
-    
-     
+          
+         #self.device=device  
      def local_update(self,w):#
       
          loss_func = nn.CrossEntropyLoss()
@@ -120,8 +116,8 @@ class Edge(object):
         test_loss /= len(self.data.dataset)
         accuracy = 100.00 * correct / len(self.data.dataset)
 
-        if self.args.verbose:
-            print('\nTest set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(
-            test_loss, correct, len(self.data.dataset), accuracy))
+       # if self.args.verbose:
+           # print('\nTest set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(
+            #test_loss, correct, len(self.data.dataset), accuracy))
         return accuracy, test_loss
 

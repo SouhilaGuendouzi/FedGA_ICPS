@@ -13,22 +13,29 @@ class Plot(object):
 
 
     def get_graph_train(self,eval,method):
+        client1, client2, client3, client4=[0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)]
+    
 
         x=range(self.args.epochs)
         if (eval=='accuracy'):
-           client1= self.train_acc[0]
-           client2=self.train_acc[1]
-           client3=self.train_acc[2]
-           client4=self.train_acc[3]
+           for i in range(self.args.epochs):
+    
+              client1[i]= self.train_acc[i][0]
+              client2[i]= self.train_acc[i][1]
+              client3[i]= self.train_acc[i][2]
+              client4[i]= self.train_acc[i][3]
+
            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
            plt.ylabel('{} Train Accuracy'.format(method))
            plt.xlabel('Communication rounds')
            plt.savefig('./save/{}_train_accuracy.png'.format(method))
+
         elif (eval=='loss'):
-           client1= self.train_loss[0]
-           client2=self.train_loss[1]
-           client3=self.train_loss[2]
-           client4=self.train_loss[3]
+           for  i in range(self.args.epochs):
+              client1[i]= self.train_loss[i][0]
+              client2[i]= self.train_loss[i][1]
+              client3[i]= self.train_loss[i][2]
+              client4[i]= self.train_loss[i][3]
            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
            plt.ylabel('{} Train Loss'.format(method))
            plt.xlabel('Communication rounds')
@@ -40,23 +47,26 @@ class Plot(object):
         plt.plot(x,client4)
 
 
-def get_graph_test(self,eval,method):
-
+    def get_graph_test(self,eval,method):
+   
+        client1, client2, client3, client4=[0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)]
         x=range(self.args.epochs)
         if (eval=='accuracy'):
-           client1= self.test_acc[0]
-           client2=self.test_acc[1]
-           client3=self.test_acc[2]
-           client4=self.test_acc[3]
-           plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
-           plt.ylabel('{} test Accuracy'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_test_accuracy.png'.format(method))
+            for i in range(self.args.epochs):
+              client1[i]= self.test_acc[i][0]
+              client2[i]= self.test_acc[i][1]
+              client3[i]= self.test_acc[i][2]
+              client4[i]= self.test_acc[i][3]
+            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
+            plt.ylabel('{} test Accuracy'.format(method))
+            plt.xlabel('Communication rounds')
+            plt.savefig('./save/{}_test_accuracy.png'.format(method))
         elif (eval=='loss'):
-           client1= self.test_loss[0]
-           client2=self.test_loss[1]
-           client3=self.test_loss[2]
-           client4=self.test_loss[3]
+           for i in range(self.args.epochs):
+              client1[i]= self.test_loss[i][0]
+              client2[i]= self.test_loss[i][1]
+              client3[i]= self.test_loss[i][2]
+              client4[i]= self.test_loss[i][3]
            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
            plt.ylabel('{} test Loss'.format(method))
            plt.xlabel('Communication rounds')

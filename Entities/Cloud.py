@@ -18,10 +18,11 @@ class Cloud(object):
         self.dataset=dataset      #used for fedGA
         self.args=args
         self.method_name='fedAVG' #by default
-        self.loss_locals_train=[0,0,0,0]
-        self.accuracy_locals_train=[0,0,0,0]
-        self.loss_locals_test=[0,0,0,0]
-        self.accuracy_locals_test=[0,0,0,0]
+        self.loss_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
+        self.accuracy_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
+        self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
+        self.accuracy_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
+       
 
 
         if self.args.all_clients: 
@@ -61,6 +62,7 @@ class Cloud(object):
     
     def Launch_local_updates(self,iter):
         self.global_model.train() 
+        
 
         for id in range(len(self.clients_list)):
             if (self.method_name=='fedPer'):
@@ -69,12 +71,12 @@ class Cloud(object):
                 w, loss =  self.clients_list[id].local_update( self.weights_global)
 
             acc, loss = self.clients_list[id].test_img(self.clients_list[id].datasetTrain)
-            self.loss_locals_train[id].append(loss)
-            self.accuracy_locals_train[id].append(acc)
+            self.loss_locals_train[iter][id]=loss
+            self.accuracy_locals_train[iter][id]=acc
             #print("Training accuracy for client {} is : {:.2f}".format(id,acc))
             acc, loss = self.clients_list[id].test_img(self.clients_list[id].datasetTest)
-            self.loss_locals_test[id].append(loss)
-            self.accuracy_locals_test[id].append(acc)
+            self.loss_locals_test[iter][id]=loss
+            self.accuracy_locals_test[iter][id]=acc
             #print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
             if self.args.all_clients:
                 self.weights_locals[id]=copy.deepcopy(w)

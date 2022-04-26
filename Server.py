@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Python version: 3.6
 # https://pytorch.org/vision/stable/datasets.html
-from tkinter import Place
+
 import matplotlib
 matplotlib.use('Agg')
 import torch
@@ -49,15 +49,13 @@ if __name__ == '__main__':
 
 
 ########################## Begin process #########################################################################################
-    cloud.loss_locals_train=[]
-    cloud.accuracy_locals_train=[]
-    cloud.loss_locals_test=[]
-    cloud.accuracy_locals_test=[]
+   
     for iter in range(args.epochs):
       weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter)
       cloud.aggregate(weights_locals,args.aggr)
 
-    weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter+1)
+    print("Fin")
+    #weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter+1)
 
 ########################## Evaluation process #########################################################################################
     print('Evaluation after Federation')
@@ -76,6 +74,10 @@ if __name__ == '__main__':
 
     acc_train_avg= sum(acc_train) / len(dict_users)
     acc_test_avg= sum(acc_test) / len(dict_users)
+
+
+
+
     plt = Plot(args,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test)
     plt.get_graph_train('accuracy',args.aggr)
     plt.get_graph_train('loss',args.aggr)
