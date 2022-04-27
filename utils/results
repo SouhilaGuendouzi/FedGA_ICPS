@@ -1,472 +1,87 @@
-PS C:\Users\bguendouzi-externe\Desktop\GitHub\Fed_ICPS> python server.py  --num_channels 1 --gpu 0 --all_clients --aggr fedGA
-Train length 2 2 3 3
-Test length 1 1 2 2
-Aggregation over all clients
-iteration 0
-Training accuracy for client 0 is : 77.36
-Testing accuracy for client 0 is : 77.93
-Training accuracy for client 1 is : 89.76
-Testing accuracy for client 1 is : 89.58
-Training accuracy for client 2 is : 66.12
-Testing accuracy for client 2 is : 68.59
-Training accuracy for client 3 is : 99.13
-Testing accuracy for client 3 is : 99.64
-1.4204467101891836
-Round   0, Average loss 1.420
-begin FedGA
-Generation = 1
-Fitness    = 0.17972010846535916
-Generation = 2
-Fitness    = 0.17972010846535916
-Generation = 3
-Fitness    = 0.17972010846535916
-Generation = 4
-Fitness    = 0.17972010846535916
-Generation = 5
-Fitness    = 0.17972010846535916
-iteration 1
-Training accuracy for client 0 is : 86.72
-Testing accuracy for client 0 is : 87.62
-Training accuracy for client 1 is : 93.95
-Testing accuracy for client 1 is : 93.92
-Training accuracy for client 2 is : 90.40
-Testing accuracy for client 2 is : 90.95
-Training accuracy for client 3 is : 99.13
-Testing accuracy for client 3 is : 99.64
-0.8984635616342227
-Round   1, Average loss 0.898
-begin FedGA
-Generation = 1
-Fitness    = 0.13666863312596728
-Generation = 2
-Fitness    = 0.13666863312596728
-Generation = 3
-Fitness    = 0.13666863312596728
-Generation = 4
-Fitness    = 0.13666863312596728
-Generation = 5
-Fitness    = 0.13666863312596728
-iteration 2
-Training accuracy for client 0 is : 91.70
-Testing accuracy for client 0 is : 91.69
-Training accuracy for client 1 is : 94.79
-Testing accuracy for client 1 is : 94.42
-Training accuracy for client 2 is : 93.90
-Testing accuracy for client 2 is : 93.35
-Training accuracy for client 3 is : 99.24
-Testing accuracy for client 3 is : 99.76
-0.6040634474903346
-Round   2, Average loss 0.604
-begin FedGA
-Generation = 1
-Fitness    = 0.13357926855628055
-Generation = 2
-Fitness    = 0.13357926855628055
-Generation = 3
-Fitness    = 0.13357926855628055
-Generation = 4
-Fitness    = 0.13357926855628055
-Generation = 5
-Fitness    = 0.13357926855628055
-iteration 3
-Training accuracy for client 0 is : 91.83
-Testing accuracy for client 0 is : 91.86
-Training accuracy for client 1 is : 96.17
-Testing accuracy for client 1 is : 95.78
-Training accuracy for client 2 is : 93.76
-Testing accuracy for client 2 is : 92.99
-Training accuracy for client 3 is : 98.89
-Testing accuracy for client 3 is : 99.52
-0.5887496938183905
-Round   3, Average loss 0.589
-begin FedGA
-Generation = 1
-Fitness    = 0.15031859836431338
-Generation = 2
-Fitness    = 0.15031859836431338
-Generation = 3
-Fitness    = 0.15031859836431338
-Generation = 4
-Fitness    = 0.15031859836431338
-Generation = 5
-Fitness    = 0.15031859836431338
-iteration 4
-Training accuracy for client 0 is : 93.70
-Testing accuracy for client 0 is : 92.92
-Training accuracy for client 1 is : 95.93
-Testing accuracy for client 1 is : 95.41
-Training accuracy for client 2 is : 94.56
-Testing accuracy for client 2 is : 93.88
-Training accuracy for client 3 is : 99.19
-Testing accuracy for client 3 is : 99.64
-0.4978747150550286
-Round   4, Average loss 0.498
-begin FedGA
-Generation = 1
-Fitness    = 0.16539984096893134
-Generation = 2
-Fitness    = 0.16539984096893134
-Generation = 3
-Fitness    = 0.16539984096893134
-Generation = 4
-Fitness    = 0.16539984096893134
-Generation = 5
-Fitness    = 0.16539984096893134
-iteration 5
-Training accuracy for client 0 is : 93.53
-Testing accuracy for client 0 is : 93.32
-Training accuracy for client 1 is : 96.47
-Testing accuracy for client 1 is : 96.28
-Training accuracy for client 2 is : 94.52
-Testing accuracy for client 2 is : 94.06
-Training accuracy for client 3 is : 99.13
-Testing accuracy for client 3 is : 99.64
-0.46600597297151886
-Round   5, Average loss 0.466
-begin FedGA
-Generation = 1
-Fitness    = 0.1779602402592934
-Generation = 2
-Fitness    = 0.1779602402592934
-Generation = 3
-Fitness    = 0.1779602402592934
-Generation = 4
-Fitness    = 0.1779602402592934
-Generation = 5
-Fitness    = 0.1779602402592934
-iteration 6
-Training accuracy for client 0 is : 94.68
-Testing accuracy for client 0 is : 93.97
-Training accuracy for client 1 is : 96.53
-Testing accuracy for client 1 is : 95.91
-Training accuracy for client 2 is : 94.87
-Testing accuracy for client 2 is : 94.41
-Training accuracy for client 3 is : 99.24
-Testing accuracy for client 3 is : 99.76
-0.44864617305497334
-Round   6, Average loss 0.449
-begin FedGA
-Generation = 1
-Fitness    = 0.1721616412413607
-Generation = 2
-Fitness    = 0.1721616412413607
-Generation = 3
-Fitness    = 0.1721616412413607
-Generation = 4
-Fitness    = 0.1721616412413607
-Generation = 5
-Fitness    = 0.1721616412413607
-iteration 7
-Training accuracy for client 0 is : 94.55
-Testing accuracy for client 0 is : 93.73
-Training accuracy for client 1 is : 96.41
-Testing accuracy for client 1 is : 95.91
-Training accuracy for client 2 is : 96.15
-Testing accuracy for client 2 is : 95.47
-Training accuracy for client 3 is : 99.01
-Testing accuracy for client 3 is : 99.64
-0.3360136824908356
-Round   7, Average loss 0.336
-begin FedGA
-Generation = 1
-Fitness    = 0.19486013604207775
-Generation = 2
-Fitness    = 0.19486013604207775
-Generation = 3
-Fitness    = 0.19486013604207775
-Generation = 4
-Fitness    = 0.19486013604207775
-Generation = 5
-Fitness    = 0.19486013604207775
-iteration 8
-Training accuracy for client 0 is : 95.36
-Testing accuracy for client 0 is : 94.46
-Training accuracy for client 1 is : 96.17
-Testing accuracy for client 1 is : 95.78
-Training accuracy for client 2 is : 96.20
-Testing accuracy for client 2 is : 95.92
-Training accuracy for client 3 is : 99.24
-Testing accuracy for client 3 is : 99.64
-0.34779821459824845
-Round   8, Average loss 0.348
-begin FedGA
-Generation = 1
-Fitness    = 0.2029468568114076
-Generation = 2
-Fitness    = 0.2029468568114076
-Generation = 3
-Fitness    = 0.2029468568114076
-Generation = 4
-Fitness    = 0.2029468568114076
-Generation = 5
-Fitness    = 0.2029468568114076
-iteration 9
-Training accuracy for client 0 is : 95.57
-Testing accuracy for client 0 is : 94.46
-Training accuracy for client 1 is : 96.29
-Testing accuracy for client 1 is : 96.15
-Training accuracy for client 2 is : 97.04
-Testing accuracy for client 2 is : 96.81
-Training accuracy for client 3 is : 99.07
-Testing accuracy for client 3 is : 99.76
-0.3759187246921162
-Round   9, Average loss 0.376
-begin FedGA
-Generation = 1
-Fitness    = 0.22097943951352855
-Generation = 2
-Fitness    = 0.22097943951352855
-Generation = 3
-Fitness    = 0.22097943951352855
-Generation = 4
-Fitness    = 0.22097943951352855
-Generation = 5
-Fitness    = 0.22097943951352855
-Training accuracy for client 0 is : 95.49
-Testing accuracy for client 0 is : 94.30
-Training accuracy for client 1 is : 96.89
-Testing accuracy for client 1 is : 96.77
-Training accuracy for client 2 is : 97.08
-Testing accuracy for client 2 is : 96.72
-Training accuracy for client 3 is : 99.07
-Testing accuracy for client 3 is : 99.76
+
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+
+########################################################################################### 
+After Aggregation
+
+fedAVG iid
+loss 0.23736774412790934 and accuracy 91.5999984741211
+Training accuracy for client 0 is : 91.66
+Testing accuracy for client 0 is : 83.20
+loss 0.2228124475479126 and accuracy 91.66666412353516
+Training accuracy for client 1 is : 91.67
+Testing accuracy for client 1 is : 84.80
+Training accuracy for client 2 is : 89.20
+Testing accuracy for client 2 is : 86.80
+Training accuracy for client 3 is : 90.87
+Testing accuracy for client 3 is : 82.00
+Round  19, Average loss 0.520
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+
+After Aggregation
+
+fedAVG non_iid
+loss 0.008800981585792067 and accuracy 99.75389862060547
+Training accuracy for client 0 is : 99.75
+Testing accuracy for client 0 is : 98.36
+loss 0.03396269612758726 and accuracy 99.07640838623047
+Training accuracy for client 1 is : 99.08
+Testing accuracy for client 1 is : 97.26
+loss 0.14755752823664936 and accuracy 93.83938598632812
+Training accuracy for client 2 is : 93.84
+Testing accuracy for client 2 is : 91.17
+loss 0.054478133114109456 and accuracy 97.7990951538086
+Training accuracy for client 3 is : 97.80
+Testing accuracy for client 3 is : 98.10
+Round  19, Average loss 0.120
 
 
-####################################################################################
-PS C:\Users\bguendouzi-externe\Desktop\GitHub\Fed_ICPS> python server.py  --num_channels 1 --gpu 0 --all_clients --aggr fedPer
-Train length 2 2 3 3
-Test length 1 1 2 2 
-Aggregation over all clients
-iteration 0
-Training accuracy for client 0 is : 78.86
-Testing accuracy for client 0 is : 79.20
-Training accuracy for client 1 is : 90.90
-Testing accuracy for client 1 is : 91.57
-Training accuracy for client 2 is : 66.87
-Testing accuracy for client 2 is : 69.74
-Training accuracy for client 3 is : 99.42
-Testing accuracy for client 3 is : 99.88
-Round   0, Average loss 1.510
-iteration 1
-Training accuracy for client 0 is : 83.48
-Testing accuracy for client 0 is : 85.27
-Training accuracy for client 1 is : 93.98
-Testing accuracy for client 1 is : 94.77
-Training accuracy for client 2 is : 78.37
-Testing accuracy for client 2 is : 77.88
-Training accuracy for client 3 is : 99.42
-Testing accuracy for client 3 is : 99.88
-Round   1, Average loss 1.135
-iteration 2
-Training accuracy for client 0 is : 88.39
-Testing accuracy for client 0 is : 88.10
-Training accuracy for client 1 is : 95.45
-Testing accuracy for client 1 is : 96.44
-Training accuracy for client 2 is : 86.41
-Testing accuracy for client 2 is : 85.74
-Training accuracy for client 3 is : 99.53
-Testing accuracy for client 3 is : 99.88
-Round   2, Average loss 0.827
-iteration 3
-Training accuracy for client 0 is : 89.88
-Testing accuracy for client 0 is : 90.52
-Training accuracy for client 1 is : 95.92
-Testing accuracy for client 1 is : 96.44
-Training accuracy for client 2 is : 91.21
-Testing accuracy for client 2 is : 89.85
-Training accuracy for client 3 is : 99.53
-Testing accuracy for client 3 is : 99.88
-Round   3, Average loss 0.670
-iteration 4
-Training accuracy for client 0 is : 91.59
-Testing accuracy for client 0 is : 91.51
-Training accuracy for client 1 is : 96.81
-Testing accuracy for client 1 is : 96.56
-Training accuracy for client 2 is : 93.74
-Testing accuracy for client 2 is : 92.96
-Training accuracy for client 3 is : 99.53
-Testing accuracy for client 3 is : 99.88
-Round   4, Average loss 0.578
-iteration 5
-Training accuracy for client 0 is : 92.57
-Testing accuracy for client 0 is : 92.85
-Training accuracy for client 1 is : 97.11
-Testing accuracy for client 1 is : 97.15
-Training accuracy for client 2 is : 94.58
-Testing accuracy for client 2 is : 93.97
-Training accuracy for client 3 is : 99.53
-Testing accuracy for client 3 is : 99.88
-Round   5, Average loss 0.505
-iteration 6
-Training accuracy for client 0 is : 93.25
-Testing accuracy for client 0 is : 93.18
-Training accuracy for client 1 is : 97.05
-Testing accuracy for client 1 is : 97.39
-Training accuracy for client 2 is : 94.94
-Testing accuracy for client 2 is : 94.06
-Training accuracy for client 3 is : 99.53
-Testing accuracy for client 3 is : 99.88
-Round   6, Average loss 0.457
-iteration 7
-Training accuracy for client 0 is : 94.41
-Testing accuracy for client 0 is : 93.68
-Training accuracy for client 1 is : 97.46
-Testing accuracy for client 1 is : 98.10
-Training accuracy for client 2 is : 95.52
-Testing accuracy for client 2 is : 94.24
-Training accuracy for client 3 is : 99.59
-Testing accuracy for client 3 is : 99.88
-Round   7, Average loss 0.419
-iteration 8
-Training accuracy for client 0 is : 95.00
-Testing accuracy for client 0 is : 93.76
-Training accuracy for client 1 is : 97.52
-Testing accuracy for client 1 is : 98.22
-Training accuracy for client 2 is : 95.87
-Testing accuracy for client 2 is : 94.61
-Training accuracy for client 3 is : 99.65
-Testing accuracy for client 3 is : 99.88
-Round   8, Average loss 0.387
-iteration 9
-Training accuracy for client 0 is : 95.22
-Testing accuracy for client 0 is : 94.09
-Training accuracy for client 1 is : 97.76
-Testing accuracy for client 1 is : 98.46
-Training accuracy for client 2 is : 96.14
-Testing accuracy for client 2 is : 94.70
-Training accuracy for client 3 is : 99.65
-Testing accuracy for client 3 is : 100.00
-Round   9, Average loss 0.363
-Training accuracy for client 0 is : 95.82
-Testing accuracy for client 0 is : 94.18
-Training accuracy for client 1 is : 97.76
-Testing accuracy for client 1 is : 98.57
-Training accuracy for client 2 is : 96.23
-Testing accuracy for client 2 is : 94.88
-Training accuracy for client 3 is : 99.65
-Testing accuracy for client 3 is : 100.00
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+fedGA iid
+After Aggregation
+loss 0.24770937824249267 and accuracy 90.93333435058594
+Training accuracy for client 0 is : 90.93
+Testing accuracy for client 0 is : 82.80
+loss 0.3085752518971761 and accuracy 88.80000305175781
+Training accuracy for client 1 is : 88.80
+Testing accuracy for client 1 is : 85.20
+loss 0.2724707457224528 and accuracy 88.86666870117188
+Training accuracy for client 2 is : 88.87
+Testing accuracy for client 2 is : 85.20
+loss 0.2831053320566813 and accuracy 89.53333282470703
+Training accuracy for client 3 is : 89.53
+Testing accuracy for client 3 is : 88.40
+Round  19, Average loss 0.520
 
-###############################################
-PS C:\Users\bguendouzi-externe\Desktop\GitHub\Fed_ICPS> python server.py  --num_channels 1 --gpu 0 --all_clients --aggr fedAVG
-Train length 2 2 3 3
-Test length 1 1 2 2
-Aggregation over all clients
-iteration 0
-Training accuracy for client 0 is : 81.08
-Testing accuracy for client 0 is : 80.58
-Training accuracy for client 1 is : 90.65
-Testing accuracy for client 1 is : 91.68
-Training accuracy for client 2 is : 92.02
-Testing accuracy for client 2 is : 91.23
-Training accuracy for client 3 is : 98.77
-Testing accuracy for client 3 is : 99.29
-1.4944470240672427
-Round   0, Average loss 1.494
-iteration 1
-Training accuracy for client 0 is : 88.79
-Testing accuracy for client 0 is : 88.26
-Training accuracy for client 1 is : 93.75
-Testing accuracy for client 1 is : 94.33
-Training accuracy for client 2 is : 93.04
-Testing accuracy for client 2 is : 93.31
-Training accuracy for client 3 is : 99.42
-Testing accuracy for client 3 is : 99.76
-0.5887681358680128
-Round   1, Average loss 0.589
-iteration 2
-Training accuracy for client 0 is : 92.41
-Testing accuracy for client 0 is : 92.15
-Training accuracy for client 1 is : 94.63
-Testing accuracy for client 1 is : 95.08
-Training accuracy for client 2 is : 93.96
-Testing accuracy for client 2 is : 93.74
-Training accuracy for client 3 is : 99.65
-Testing accuracy for client 3 is : 99.65
-0.32591219986478487
-Round   2, Average loss 0.326
-iteration 3
-Training accuracy for client 0 is : 92.65
-Testing accuracy for client 0 is : 92.73
-Training accuracy for client 1 is : 95.14
-Testing accuracy for client 1 is : 95.21
-Training accuracy for client 2 is : 94.89
-Testing accuracy for client 2 is : 94.35
-Training accuracy for client 3 is : 99.71
-Testing accuracy for client 3 is : 100.00
-0.2646003162271032
-Round   3, Average loss 0.265
-iteration 4
-Training accuracy for client 0 is : 93.56
-Testing accuracy for client 0 is : 92.64
-Training accuracy for client 1 is : 95.39
-Testing accuracy for client 1 is : 95.84
-Training accuracy for client 2 is : 95.15
-Testing accuracy for client 2 is : 95.13
-Training accuracy for client 3 is : 99.71
-Testing accuracy for client 3 is : 100.00
-0.18435378729055327
-Round   4, Average loss 0.184
-iteration 5
-Training accuracy for client 0 is : 94.13
-Testing accuracy for client 0 is : 93.31
-Training accuracy for client 1 is : 95.70
-Testing accuracy for client 1 is : 95.84
-Training accuracy for client 2 is : 93.43
-Testing accuracy for client 2 is : 94.79
-Training accuracy for client 3 is : 99.71
-Testing accuracy for client 3 is : 100.00
-0.16183408772417654
-Round   5, Average loss 0.162
-iteration 6
-Training accuracy for client 0 is : 94.33
-Testing accuracy for client 0 is : 94.05
-Training accuracy for client 1 is : 96.21
-Testing accuracy for client 1 is : 96.22
-Training accuracy for client 2 is : 95.72
-Testing accuracy for client 2 is : 95.48
-Training accuracy for client 3 is : 99.71
-Testing accuracy for client 3 is : 100.00
-0.15064383619620153
-Round   6, Average loss 0.151
-iteration 7
-Training accuracy for client 0 is : 92.90
-Testing accuracy for client 0 is : 92.23
-Training accuracy for client 1 is : 96.02
-Testing accuracy for client 1 is : 96.09
-Training accuracy for client 2 is : 95.77
-Testing accuracy for client 2 is : 96.26
-Training accuracy for client 3 is : 99.71
-Testing accuracy for client 3 is : 100.00
-0.14665060698830834
-Round   7, Average loss 0.147
-iteration 8
-Training accuracy for client 0 is : 95.20
-Testing accuracy for client 0 is : 94.21
-Training accuracy for client 1 is : 96.02
-Testing accuracy for client 1 is : 96.09
-Training accuracy for client 2 is : 96.21
-Testing accuracy for client 2 is : 96.61
-Training accuracy for client 3 is : 99.71
-Testing accuracy for client 3 is : 100.00
-0.1493785467146275
-Round   8, Average loss 0.149
-iteration 9
-Training accuracy for client 0 is : 95.32
-Testing accuracy for client 0 is : 93.88
-Training accuracy for client 1 is : 96.15
-Testing accuracy for client 1 is : 96.85
-Training accuracy for client 2 is : 96.52
-Testing accuracy for client 2 is : 97.05
-Training accuracy for client 3 is : 99.77
-Testing accuracy for client 3 is : 100.00
-0.13397644370483855
-Round   9, Average loss 0.134
-Training accuracy for client 0 is : 95.28
-Testing accuracy for client 0 is : 93.39
-Training accuracy for client 1 is : 96.59
-Testing accuracy for client 1 is : 96.34
-Training accuracy for client 2 is : 96.39
-Testing accuracy for client 2 is : 96.96
-Training accuracy for client 3 is : 99.77
-Testing accuracy for client 3 is : 100.00
-0.12528275598267405
+
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+fedGA non_iid
+After Aggregation
+loss 0.18227008799647978 and accuracy 97.58842468261719
+Training accuracy for client 0 is : 97.59
+Testing accuracy for client 0 is : 96.83
+loss 0.6932122675630693 and accuracy 51.33111572265625
+Training accuracy for client 1 is : 51.33
+Testing accuracy for client 1 is : 52.28
+loss 0.3953902813573667 and accuracy 81.86469268798828
+Training accuracy for client 2 is : 81.86
+Testing accuracy for client 2 is : 80.74
+loss 0.07896062056002179 and accuracy 97.60445404052734
+Training accuracy for client 3 is : 97.60
+Testing accuracy for client 3 is : 97.17
+Round  19, Average loss 0.201

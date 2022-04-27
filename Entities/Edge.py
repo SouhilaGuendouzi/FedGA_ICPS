@@ -16,24 +16,22 @@ class Edge(object):
          self.args=args
           
          #self.device=device  
-     def local_update(self,w):#
+     def local_update(self,weights_global):#
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
        
          #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
-         print(len(self.data))
-         print(len(self.data.dataset))
+      
         
-         self.model.load_state_dict(w)
-         self.w=self.model.state_dict()
+        
+         self.w=weights_global
+         self.model.load_state_dict(self.w)
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []
         
          
          for iter in range(self.args.local_ep):
-            print(iter)
- 
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
                 #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
@@ -53,10 +51,10 @@ class Edge(object):
          return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
      
-     def local_updatePer(self,w_glob):
-
+     def local_updatePer(self):
+         
          loss_func = nn.CrossEntropyLoss()
-         self.glob=copy.deepcopy(w_glob)
+         self.glob=copy.deepcopy(self.model.state_dict())
          self.w=self.model.state_dict()
         
          try :
@@ -99,13 +97,14 @@ class Edge(object):
          return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 
-     def test_img(self,dataset):
+     def test_img(self,datasetName):
         self.model.eval()
         #self.data = DataLoader(dataset=dataset, shuffle=True)
-        self.data=dataset
+        if (datasetName=='test'):
+           self.data=self.datasetTest
+        elif (datasetName=='train'):
+            self.data=self.datasetTrain
         self.w=self.model.state_dict()
-        #if (self.id==1):
-         # print('§§§§§§§§§§§ client: ',self.id,self.w)
         
        
         # testing
@@ -116,17 +115,21 @@ class Edge(object):
         for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
            #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
            log_probs =  self.model(data)
+           
            # sum up batch loss
            test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()
            # get the index of the max log-probability
            y_pred = log_probs.data.max(1, keepdim=True)[1]
            correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
+           
 
         test_loss /= len(self.data.dataset)
         accuracy = 100.00 * correct / len(self.data.dataset)
+       
 
         if self.args.verbose:
-            print('\nTest set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(
-            test_loss, correct, len(self.data.dataset), accuracy))
+           
+            print('\n Client: {}  {} set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(self.id,
+           datasetName, test_loss, correct, len(self.data.dataset), accuracy))
         return accuracy, test_loss
 

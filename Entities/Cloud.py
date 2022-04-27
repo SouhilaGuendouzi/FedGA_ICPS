@@ -23,6 +23,7 @@ class Cloud(object):
         self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
         self.accuracy_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
        
+       
 
 
         if self.args.all_clients: 
@@ -36,11 +37,12 @@ class Cloud(object):
     def aggregate(self,weights_clients,method_name):
         self.method_name=method_name
         self.weights_locals=weights_clients
-       
+        self.i=0
         if (self.method_name=='fedAVG'):
               self.weights_global=FedAvg(self.weights_locals)
         elif (self.method_name=='fedGA'):
              initial_population=self.weights_locals
+            
        
              for d in self.weights_locals: # for each user
                 weight=[]
@@ -49,8 +51,8 @@ class Cloud(object):
                          array = np.array(x[1], dtype='f')#1 is a tensor
                          array= array.flatten()
                          weight= np.concatenate((weight, array), axis=0)
-                         initial_population[i]= np.array(weight,dtype='f')
-                i=i+1 # next weight vector (user)
+                         initial_population[ self.i]= np.array(weight,dtype='f')
+                self.i= self.i+1 # next weight vector (user)
              self.weights_global = FedGA(initial_population,self.global_model,self.dataset)
 
         elif (self.method_name=='fedPer'):
@@ -70,14 +72,15 @@ class Cloud(object):
             else :
                 w, loss =  self.clients_list[id].local_update( self.weights_global)
 
-            acc, loss = self.clients_list[id].test_img(self.clients_list[id].datasetTrain)
+            acc, loss = self.clients_list[id].test_img('train')
+            print('loss {} and accuracy {}'.format(loss,acc))
             self.loss_locals_train[iter][id]=loss
             self.accuracy_locals_train[iter][id]=acc
-            #print("Training accuracy for client {} is : {:.2f}".format(id,acc))
-            acc, loss = self.clients_list[id].test_img(self.clients_list[id].datasetTest)
+            print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+            acc, loss = self.clients_list[id].test_img('test')
             self.loss_locals_test[iter][id]=loss
             self.accuracy_locals_test[iter][id]=acc
-           # print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
+            print("Testing accuracy for client {} is : {:.2f}".format(id,acc))
             if self.args.all_clients:
                 self.weights_locals[id]=copy.deepcopy(w)
             else:

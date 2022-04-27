@@ -28,7 +28,7 @@ class Plot(object):
            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
            plt.ylabel('{} Train Accuracy'.format(method))
            plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_train_accuracy_{}.png'.format(method,self.args.aggr))
+           plt.savefig('./save/{}_train_accuracy_{}.png'.format(method,self.args.iid))
 
         elif (eval=='loss'):
            for  i in range(self.args.epochs):
@@ -39,7 +39,7 @@ class Plot(object):
            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
            plt.ylabel('{} Train Loss'.format(method))
            plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_train_loss_{}.png'.format(method,self.args.aggr))
+           plt.savefig('./save/{}_train_loss_{}.png'.format(method,self.args.iid))
         plt.figure()
         plt.plot(x,client1)
         plt.plot(x,client2)
@@ -60,7 +60,7 @@ class Plot(object):
             plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
             plt.ylabel('{} test Accuracy'.format(method))
             plt.xlabel('Communication rounds')
-            plt.savefig('./save/{}_test_accuracy_{}.png'.format(method,self.args.aggr))
+            plt.savefig('./save/{}_test_accuracy_{}.png'.format(method,self.args.iid))
         elif (eval=='loss'):
            for i in range(self.args.epochs):
               client1[i]= self.test_loss[i][0]
@@ -70,7 +70,7 @@ class Plot(object):
            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
            plt.ylabel('{} test Loss'.format(method))
            plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_test_loss.png'.format(method))
+           plt.savefig('./save/{}_test_loss_{}.png'.format(method,self.args.iid))
         plt.figure()
         plt.plot(x,client1)
         plt.plot(x,client2)
