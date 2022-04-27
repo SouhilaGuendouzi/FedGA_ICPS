@@ -17,11 +17,13 @@ class Edge(object):
           
          #self.device=device  
      def local_update(self,w):#
-      
-         loss_func = nn.CrossEntropyLoss()
+         self.model.train()
+         self.loss_func = nn.CrossEntropyLoss()
        
          #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
+         print(len(self.data))
+         print(len(self.data.dataset))
         
          self.model.load_state_dict(w)
          self.w=self.model.state_dict()
@@ -30,6 +32,7 @@ class Edge(object):
         
          
          for iter in range(self.args.local_ep):
+            print(iter)
  
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
@@ -37,7 +40,7 @@ class Edge(object):
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
                 self.model.zero_grad()
                 log_probs = self.model(images)
-                loss = loss_func(log_probs, labels)
+                loss = self.loss_func(log_probs, labels)
                 loss.backward()
                 optimizer.step()
 
@@ -75,6 +78,7 @@ class Edge(object):
          epoch_loss = []
 
          for iter in range(self.args.local_ep):
+            print(iter)
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
                 #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
@@ -99,12 +103,17 @@ class Edge(object):
         self.model.eval()
         #self.data = DataLoader(dataset=dataset, shuffle=True)
         self.data=dataset
+        self.w=self.model.state_dict()
+        #if (self.id==1):
+         # print('§§§§§§§§§§§ client: ',self.id,self.w)
         
        
         # testing
         test_loss = 0
         correct = 0
-        for idx, (data, target) in enumerate(self.data):
+        #print(len(self.data))
+        #print(len(self.data.dataset))
+        for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
            #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
            log_probs =  self.model(data)
            # sum up batch loss
