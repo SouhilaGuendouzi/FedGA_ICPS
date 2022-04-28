@@ -85,3 +85,39 @@ loss 0.07896062056002179 and accuracy 97.60445404052734
 Training accuracy for client 3 is : 97.60
 Testing accuracy for client 3 is : 97.17
 Round  19, Average loss 0.201
+
+
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+###########################################################################################
+
+After Aggregation
+loss 0.00444833283467541 and accuracy 99.82714080810547
+Training accuracy for client 0 is : 99.83
+Testing accuracy for client 0 is : 98.97
+loss 0.028419246080954676 and accuracy 98.6895980834961
+Training accuracy for client 1 is : 98.69
+Testing accuracy for client 1 is : 97.09
+loss 0.13114378405027236 and accuracy 95.78480529785156
+Training accuracy for client 2 is : 95.78
+Testing accuracy for client 2 is : 90.66
+loss 0.03185440633095772 and accuracy 98.73556518554688
+Training accuracy for client 3 is : 98.74
+Testing accuracy for client 3 is : 97.75
+
+
+After Aggregation
+loss 0.001210289282595869 and accuracy 100.0
+Training accuracy for client 0 is : 100.00
+Testing accuracy for client 0 is : 100.00
+loss 0.014573546796878202 and accuracy 99.34210205078125
+Training accuracy for client 1 is : 99.34
+Testing accuracy for client 1 is : 97.24
+loss 0.35624160800564325 and accuracy 79.71510314941406
+Training accuracy for client 2 is : 79.72
+Testing accuracy for client 2 is : 80.39
+loss 0.11921782088450586 and accuracy 95.64498138427734
+Training accuracy for client 3 is : 95.64
+Testing accuracy for client 3 is : 94.77

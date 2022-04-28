@@ -6,6 +6,7 @@ import numpy as np
 from Aggregation.FedAVG import FedAvg
 from Aggregation.FedGA import FedGA
 from Aggregation.FedPer import FedPer
+from Aggregation.FedPerGA import FedPerGA
 
 
 
@@ -15,6 +16,7 @@ class Cloud(object):
         self.clients_list=clients
         self.global_model=global_model
         self.weights_global=self.global_model.state_dict()
+        self.weights_previous=self.global_model.state_dict() # we need it for FedPer
         self.dataset=dataset      #used for fedGA
         self.args=args
         self.method_name='fedAVG' #by default
@@ -37,6 +39,7 @@ class Cloud(object):
     def aggregate(self,weights_clients,method_name):
         self.method_name=method_name
         self.weights_locals=weights_clients
+        
         self.i=0
         if (self.method_name=='fedAVG'):
               self.weights_global=FedAvg(self.weights_locals)
@@ -56,7 +59,30 @@ class Cloud(object):
              self.weights_global = FedGA(initial_population,self.global_model,self.dataset)
 
         elif (self.method_name=='fedPer'):
-             self.weights_global=FedPer(self.weights_locals)
+
+             self.weights_global=FedPer(self.weights_locals, self.global_model)
+
+             self.weights_previous=self.global_model.state_dict()
+             self.weights_previous.update(self.weights_global)
+             self.weights_global= self.weights_previous
+
+        elif (self.method_name=='fedPerGA'):
+
+              initial_population=self.weights_locals #machi kamline
+            
+       
+              for d in self.weights_locals: # for each user
+                weight=[]
+                if isinstance(d, dict):
+                     for x in d.items():  #get weights of each layer
+                         array = np.array(x[1], dtype='f')#1 is a tensor
+                         array= array.flatten()
+                         weight= np.concatenate((weight, array), axis=0)
+                         initial_population[ self.i]= np.array(weight,dtype='f')
+                self.i= self.i+1 # next weight vector (user)
+              
+
+              self.weights_global = FedPerGA(initial_population,self.global_model,self.dataset)
 
         self.global_model.load_state_dict(self.weights_global)
 
@@ -64,11 +90,26 @@ class Cloud(object):
     
     def Launch_local_updates(self,iter):
         self.global_model.train() 
-        
+        self.Per_weights=[]
+        self.net=copy.deepcopy(self.global_model.state_dict())
+        try :
+          del[self.net['fc1.bias']]
+          del[self.net['fc1.weight']]
+          del[self.net['fc2.bias']]
+          del[self.net['fc2.weight']]
+
+        except:
+             print('error')
 
         for id in range(len(self.clients_list)):
             if (self.method_name=='fedPer'):
-                w, loss =  self.clients_list[id].local_updatePer( self.weights_global)
+                
+                w, loss =  self.clients_list[id].local_updatePer(self.net)
+            elif (self.method_name=='fedPerGA'): 
+                 self.net=copy.deepcopy(self.global_model.state_dict())
+                 w, loss =  self.clients_list[id].local_updatePer(self.net)
+                 self.net.update(w)
+                 w=self.net
             else :
                 w, loss =  self.clients_list[id].local_update( self.weights_global)
 

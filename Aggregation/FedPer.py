@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 
-def FedPer(w):
+def FedPer(w,globalModel):
   
     w_base = copy.deepcopy(w[0])
 

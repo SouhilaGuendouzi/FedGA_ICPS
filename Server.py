@@ -36,7 +36,9 @@ if __name__ == '__main__':
 
     print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
     print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
+   
 
+  
    
 ########################## Prapare Cloud #########################################################################################
  
@@ -50,6 +52,7 @@ if __name__ == '__main__':
    
     for iter in range(args.epochs):
       weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter)
+     
       net_glob=cloud.aggregate(weights_locals,args.aggr)
 
     print("After Aggregation")

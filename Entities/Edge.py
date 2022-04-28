@@ -50,33 +50,28 @@ class Edge(object):
       
          return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
-     
-     def local_updatePer(self):
+
+        
+     def local_updatePer(self,weights_global):
          
          loss_func = nn.CrossEntropyLoss()
-         self.glob=copy.deepcopy(self.model.state_dict())
-         self.w=self.model.state_dict()
-        
-         try :
-          del[self.glob['fc1.bias']]
-          del[self.glob['fc1.weight']]
-          del[self.glob['fc2.bias']]
-          del[self.glob['fc2.weight']]
-         except:
-            print("vide")
+         self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
+         self.w=weights_global #mafihch fully conntected
+    
 
-         self.w.update(self.glob)
+         self.weights.update(self.w)
+
 
 
          #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
-         self.model.load_state_dict(self.w)
+         self.model.load_state_dict(self.weights)
          self.model.train()
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []
 
          for iter in range(self.args.local_ep):
-            print(iter)
+          
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
                 #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
@@ -93,8 +88,16 @@ class Edge(object):
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
 
             
-      
-         return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
+         self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
+         try :
+          del[self.weights['fc1.bias']]
+          del[self.weights['fc1.weight']]
+          del[self.weights['fc2.bias']]
+          del[self.weights['fc2.weight']]
+
+         except:
+             print('error')
+         return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 
      def test_img(self,datasetName):
