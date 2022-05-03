@@ -18,3 +18,6 @@ python server.py --dataset mnist --iid --num_channels 1 --model cnn --epochs 50 
 NB: for CIFAR-10, num_channels must be 3.
 
 => https://github.com/vaseline555/Federated-Averaging-PyTorch
+
+
+pip install tabulate
