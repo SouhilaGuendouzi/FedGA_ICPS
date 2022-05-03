@@ -1,79 +1,43 @@
-import numpy as np
-import matplotlib.pyplot as plt
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Python version: 3.6
 
+import argparse
 
-class Plot(object):
-
-    def __init__(self,args,accTRAIN,accTEST, lossTRAIN, lossTEST):#,device
-      self.args=args
-      self.test_acc=accTEST
-      self.test_loss=lossTEST
-      self.train_acc=accTRAIN
-      self.train_loss=lossTRAIN 
-
-
-    def get_graph_train(self,eval,method):
-        client1, client2, client3, client4=[0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)]
+def args_parser():
+    parser = argparse.ArgumentParser()
+    # federated arguments 
+    parser.add_argument('--epochs', type=int, default=10, help="rounds of training") # epochs number is the same as number of layers in FedMA
+    parser.add_argument('--num_users', type=int, default=4, help="number of users: K")
+    parser.add_argument('--frac', type=float, default=0.1, help="the fraction of clients: C")
+    parser.add_argument('--local_ep', type=int, default=30, help="the number of local epochs: E")
     
+    parser.add_argument('--local_bs', type=int, default=10, help="local batch size: B")
+    parser.add_argument('--bs', type=int, default=128, help="test batch size")
+    parser.add_argument('--lr', type=float, default=0.01, help="learning rate")
+    parser.add_argument('--momentum', type=float, default=0.5, help="SGD momentum (default: 0.5)")
+    parser.add_argument('--split', type=str, default='user', help="train-test split type, user or sample")
 
-        x=range(self.args.epochs)
-        if (eval=='accuracy'):
-           for i in range(self.args.epochs):
-              
-              client1[i]= self.train_acc[i][0]
-              client2[i]= self.train_acc[i][1]
-              client3[i]= self.train_acc[i][2]
-              client4[i]= self.train_acc[i][3]
+    # model arguments
+    parser.add_argument('--model', type=str, default='mlp', help='model name')
+    parser.add_argument('--kernel_num', type=int, default=9, help='number of each kind of kernel')
+    parser.add_argument('--kernel_sizes', type=str, default='3,4,5',
+                        help='comma-separated kernel size to use for convolution')
+    parser.add_argument('--norm', type=str, default='batch_norm', help="batch_norm, layer_norm, or None")
+    parser.add_argument('--num_filters', type=int, default=32, help="number of filters for conv nets")
+    parser.add_argument('--max_pool', type=str, default='True',
+                        help="Whether use max pooling rather than strided convolutions")
 
-           plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
-           plt.ylabel('{} Train Accuracy'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_train_accuracy_{}.png'.format(method,self.args.iid))
-
-        elif (eval=='loss'):
-           for  i in range(self.args.epochs):
-              client1[i]= self.train_loss[i][0]
-              client2[i]= self.train_loss[i][1]
-              client3[i]= self.train_loss[i][2]
-              client4[i]= self.train_loss[i][3]
-           plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
-           plt.ylabel('{} Train Loss'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_train_loss_{}.png'.format(method,self.args.iid))
-        plt.figure()
-        plt.plot(x,client1)
-        plt.plot(x,client2)
-        plt.plot(x,client3)
-        plt.plot(x,client4)
-
-
-    def get_graph_test(self,eval,method):
-   
-        client1, client2, client3, client4=[0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)], [0 for _ in range(self.args.epochs)]
-        x=range(self.args.epochs)
-        if (eval=='accuracy'):
-            for i in range(self.args.epochs):
-              client1[i]= self.test_acc[i][0]
-              client2[i]= self.test_acc[i][1]
-              client3[i]= self.test_acc[i][2]
-              client4[i]= self.test_acc[i][3]
-            plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
-            plt.ylabel('{} test Accuracy'.format(method))
-            plt.xlabel('Communication rounds')
-            plt.savefig('./save/{}_test_accuracy_{}.png'.format(method,self.args.iid))
-        elif (eval=='loss'):
-           for i in range(self.args.epochs):
-              client1[i]= self.test_loss[i][0]
-              client2[i]= self.test_loss[i][1]
-              client3[i]= self.test_loss[i][2]
-              client4[i]= self.test_loss[i][3]
-           plt.legend(["Client 1", "Client 2", "Client 3", "Client 4"])
-           plt.ylabel('{} test Loss'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_test_loss_{}.png'.format(method,self.args.iid))
-        plt.figure()
-        plt.plot(x,client1)
-        plt.plot(x,client2)
-        plt.plot(x,client3)
-        plt.plot(x,client4)
-        
+    # other arguments
+    parser.add_argument('--aggr', type=str, default='fedAVG', help="name of aggregation method")
+    parser.add_argument('--dataset', type=str, default='mnist', help="name of dataset")
+    parser.add_argument('--iid', type=str, default='iid', help="iid or non_iid")
+    parser.add_argument('--num_classes', type=int, default=10, help="number of classes")
+    parser.add_argument('--num_channels', type=int, default=1, help="number of channels of imges")
+    parser.add_argument('--gpu', type=int, default=0, help="GPU ID, -1 for CPU")
+    parser.add_argument('--stopping_rounds', type=int, default=10, help='rounds of early stopping')
+    parser.add_argument('--verbose', action='store_true', help='verbose print')
+    parser.add_argument('--seed', type=int, default=1, help='random seed (default: 1)')
+    parser.add_argument('--all_clients', action='store_true', help='aggregation over all clients')
+    args = parser.parse_args()
+    return args

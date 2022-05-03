@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import torch
 from torch import nn
 import copy
-
+from torch.utils.data import DataLoader
 class Edge(object):
 
      def __init__(self, id,model, datasetTrain, datasetTest, args):#,device
@@ -56,7 +56,7 @@ class Edge(object):
          
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
-         self.w=weights_global #mafihch fully conntected
+         self.w=weights_global #mafihch classification layers
     
 
          self.weights.update(self.w)
@@ -67,6 +67,8 @@ class Edge(object):
          self.data = self.datasetTrain
          self.model.load_state_dict(self.weights)
          self.model.train()
+
+        
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []
 
@@ -90,10 +92,10 @@ class Edge(object):
             
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
          try :
-          del[self.weights['fc1.bias']]
-          del[self.weights['fc1.weight']]
-          del[self.weights['fc2.bias']]
-          del[self.weights['fc2.weight']]
+          del[self.net['conv1.bias']]
+          del[self.net['conv1.weight']]
+          del[self.net['conv2.bias']]
+          del[self.net['conv2.weight']]
 
          except:
              print('error')
@@ -101,6 +103,8 @@ class Edge(object):
     
 
      def test_img(self,datasetName):
+
+
         self.model.eval()
         #self.data = DataLoader(dataset=dataset, shuffle=True)
         if (datasetName=='test'):
@@ -122,8 +126,9 @@ class Edge(object):
            # sum up batch loss
            test_loss += F.cross_entropy(log_probs, target, reduction='sum').item()
            # get the index of the max log-probability
-           y_pred = log_probs.data.max(1, keepdim=True)[1]
-           correct += y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
+           _,y_pred = log_probs.max(1,keepdim=True)
+           #==> y_pred = log_probs.data.max(1, keepdim=True)[1]
+           correct += torch.sum(y_pred.view(-1,1)==target.view(-1, 1)).item() #==> y_pred.eq(target.data.view_as(y_pred)).long().cpu().sum()
            
 
         test_loss /= len(self.data.dataset)
@@ -131,8 +136,9 @@ class Edge(object):
        
 
         if self.args.verbose:
+            with open("./results.txt", "w") as f:
+              print('\n Client: {}  {} set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(self.id,datasetName, test_loss, correct, len(self.data.dataset), accuracy),f)
+            
            
-            print('\n Client: {}  {} set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(self.id,
-           datasetName, test_loss, correct, len(self.data.dataset), accuracy))
         return accuracy, test_loss
 
