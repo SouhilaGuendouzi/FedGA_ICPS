@@ -7,8 +7,8 @@ import matplotlib
 matplotlib.use('Agg')
 import torch
 from utils.Options import args_parser
-from Entities.Model import Model_MNIST, CNNCifar, Model_Fashion 
-from torch.utils.data import DataLoader, ConcatDataset, RandomSampler
+from Entities.Model import Model_MNIST, Pretrained_Model
+from torch.utils.data import DataLoader
 from Entities.Edge import Edge
 from utils.create_MNIST_datasets import get_FashionMNIST, get_MNIST
 from Entities.Cloud import Cloud
@@ -41,6 +41,12 @@ if __name__ == '__main__':
     dict_users[2] = Edge (2,net_glob, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)  #C  
    
     
+
+    
+    #mnist_iid_train_dls, mnist_iid_test_dls = get_FashionMNIST('iid',
+    #n_samples_train =60000, n_samples_test=10000, n_clients =2,  
+    #batch_size =50, shuffle =True)
+
     dataset_loaded_train_power= datasets.FashionMNIST( root="./data", train=True, download=True,  transform=transforms.ToTensor())
    
     train=DataLoader( dataset_loaded_train_power,batch_size=50, shuffle=True)
@@ -50,10 +56,52 @@ if __name__ == '__main__':
    
     test=DataLoader( dataset_loaded_test_power,batch_size=50, shuffle=True)
 
-
-    dict_users[3]=Edge (3,net_glob,  train,test,args)   #powerful user
+    Tl =Pretrained_Model()
+    dict_users[3]=Edge (3,Tl,  train,test,args)   #powerful user
 
     
+    #print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]), len(mnist_iid_train_dls[0]), len(mnist_iid_train_dls[0]))
+    #print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_iid_test_dls[0]))
+
+    accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
+    dict_users[3].local_update(w)
+   
+         
+    accloss[0][3],s=dict_users[3].test_img('train')
+    accloss[1][3],s=dict_users[3].test_img('test')
+
+    row=accloss
+    col=['Client {}'.format(j) for j in range(len(dict_users))]
+    print(tabulate(row, headers=col, tablefmt="fancy_grid"))
+    Plot.Plot_table(accloss,col)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
