@@ -17,7 +17,7 @@ class Edge(object):
           
          #self.device=device  
      def local_update(self,weights_global):#
-         print('souhila')
+         print(self.id)
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
        
@@ -35,7 +35,7 @@ class Edge(object):
         
          
          for iter in range(self.args.local_ep):
-            print(iter)
+           
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
                 #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
@@ -122,9 +122,15 @@ class Edge(object):
         test_loss = 0
         correct = 0
         #print(len(self.data))
-        #print(len(self.data.dataset))
+        #
+        # 
+        # (len(self.data.dataset))
+        
+      
         for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
            #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
+           
+           data, target = data.cuda(), target.cuda() # add this line
            log_probs =  self.model(data)
            
            # sum up batch loss

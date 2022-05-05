@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import torch
 from utils.Options import args_parser
-from Entities.Model import Model_MNIST, Pretrained_Model
+from Entities.Model import Model_Fashion, Model_MNIST, Pretrained_Model
 from torch.utils.data import DataLoader
 from Entities.Edge import Edge
 from utils.create_MNIST_datasets import get_FashionMNIST, get_MNIST
@@ -16,12 +16,15 @@ from utils.Plot import Plot
 from torchvision import datasets
 from torchvision import transforms
 from tabulate import tabulate
+import time
+
 if __name__ == '__main__':
     # parse args
     args = args_parser()
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    net_glob = Model_MNIST(args=args).to(args.device)
+    print(torch.cuda.is_available())
+    net_glob = Model_MNIST(args).to(args.device)
     net_glob.train() 
     w=net_glob.state_dict()
     weights_locals=[]
@@ -38,7 +41,7 @@ if __name__ == '__main__':
     
     dict_users[0] = Edge (0,net_glob, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #B
     dict_users[1] = Edge (1,net_glob, mnist_non_iid_train_dls[1], mnist_non_iid_test_dls[1],args)    #B
-    dict_users[2] = Edge (2,net_glob, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)  #C  
+    dict_users[2] = Edge (2,net_glob, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)     #C  
    
     
 
@@ -56,79 +59,37 @@ if __name__ == '__main__':
    
     test=DataLoader( dataset_loaded_test_power,batch_size=50, shuffle=True)
 
-    Tl =Pretrained_Model()
-    dict_users[3]=Edge (3,Tl,  train,test,args)   #powerful user
-
+    #Tl =Pretrained_Model()
+    train, test  = get_FashionMNIST("server",n_samples_train =20000, n_samples_test=8000)
+    print(len(train),len(test))
+    dict_users[3]=Edge (3,net_glob,  train,test,args)   #powerful user
     
-    #print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]), len(mnist_iid_train_dls[0]), len(mnist_iid_train_dls[0]))
-    #print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_iid_test_dls[0]))
-
-    accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
-    dict_users[3].local_update(w)
-   
-         
-    accloss[0][3],s=dict_users[3].test_img('train')
-    accloss[1][3],s=dict_users[3].test_img('test')
-
-    row=accloss
-    col=['Client {}'.format(j) for j in range(len(dict_users))]
-    print(tabulate(row, headers=col, tablefmt="fancy_grid"))
-    Plot.Plot_table(accloss,col)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
+    dict_users[0].local_update(w)
+    
+   #print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
     #print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
 
     accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
+   
+    start_time = time.time()
     for i in range(len(dict_users)):
          dict_users[i].local_update(w)
          accloss[0][i],s=dict_users[i].test_img('train')
          accloss[1][i],s=dict_users[i].test_img('test')
-
+        
     row=accloss
     col=['Client {}'.format(j) for j in range(len(dict_users))]
     print(tabulate(row, headers=col, tablefmt="fancy_grid"))
+
+    print("--- %s seconds ---" % (time.time() - start_time))
     
 
   
    
 
-
-
-
-
 ########################## Prapare Cloud #########################################################################################
  
-    train_Cloud, test_Cloud = get_MNIST("server",n_samples_train =20000, n_samples_test=10000)
+    train_Cloud, test_Cloud = get_FashionMNIST("server",n_samples_train =20000, n_samples_test=10000)
 
     cloud=Cloud(dict_users,net_glob,test_Cloud,args)
   
@@ -158,4 +119,39 @@ if __name__ == '__main__':
     plt.get_graph_train('accuracy',args.aggr)
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
