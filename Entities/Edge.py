@@ -31,6 +31,7 @@ class Edge(object):
          #self.model.load_state_dict(self.w)
 
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
+       
          epoch_loss = []
         
          
