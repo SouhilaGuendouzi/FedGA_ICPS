@@ -69,23 +69,10 @@ if __name__ == '__main__':
     #dict_users[1].local_update(w)
     #dict_users[3].local_update(w)
     
-   #print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
-    #print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
+    print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
+    print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
 
-    accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
    
-    start_time = time.time()
-    for i in range(len(dict_users)):
-         print(i)
-         dict_users[i].local_update(w)
-         accloss[0][i],s=dict_users[i].test_img('train')
-         accloss[1][i],s=dict_users[i].test_img('test')
-        
-    row=accloss
-    col=['Client {}'.format(j) for j in range(len(dict_users))]
-    print(tabulate(row, headers=col, tablefmt="fancy_grid"))
-
-    print("--- %s seconds ---" % (time.time() - start_time))
     
 
   
@@ -95,18 +82,31 @@ if __name__ == '__main__':
  
      
     train, test = get_FashionMNIST('iid',
-    n_samples_train =60000, n_samples_test=10000, n_clients =2,  
+    n_samples_train =1500, n_samples_test=250, n_clients =2,  
     batch_size =50, shuffle =True)
-  
-    cloud=Cloud(dict_users,net_glob,test,args)
+    print('Cloud length',len(test[0]))
+    cloud=Cloud(dict_users,net_glob,test[0],args)
   
 
 
 ########################## Begin process #########################################################################################
-   
+    accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
     for iter in range(args.epochs):
+        
+
       weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter)
-     
+      print(accuracy_locals_train)
+      if (iter==0):
+          for i in range(len(dict_users)):
+   
+            accloss[0][i]=accuracy_locals_train[0][i]
+            accloss[1][i]=accuracy_locals_test[0][i]
+
+          row=accloss
+          col=['Client {}'.format(j) for j in range(len(dict_users))]
+          print(tabulate(row, headers=col, tablefmt="fancy_grid"))
+        
+
       net_glob=cloud.aggregate(weights_locals,args.aggr)
 
     print("After Aggregation")
@@ -115,7 +115,14 @@ if __name__ == '__main__':
 
 ########################## Evaluation process #########################################################################################
   
-       
+    for i in range(len(dict_users)):
+   
+            accloss[0][i]=accuracy_locals_train[0][i]
+            accloss[1][i]=accuracy_locals_test[0][i]
+
+    row=accloss
+    col=['Client {}'.format(j) for j in range(len(dict_users))]
+    print(tabulate(row, headers=col, tablefmt="fancy_grid")) 
 
     print('§§§§§§§§§§§§§§§§§§§§§§§§§§§',len(accuracy_locals_train))
     plt = Plot(args,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test)

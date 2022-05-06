@@ -8,15 +8,19 @@ import torch.nn.functional as F
 import pygad
 import pygad.torchga as tg
 
+
+#https://neptune.ai/blog/train-pytorch-models-using-genetic-algorithm-with-pygad ==> Ahmed Gad
+
+
+
+
 loss_function = nn.CrossEntropyLoss()
 
 def fitness(solution, sol_idx):
 
    
         loss=0.0
-      
-      
-        model_weights_dict = tg.model_weights_as_dict(model=model, weights_vector=solution)
+        model_weights_dict = tg.model_weights_as_dict(model=model.cpu() ,weights_vector=solution)
         model.load_state_dict(model_weights_dict)
 
         for idx, (data, target) in enumerate(dataset):
@@ -27,7 +31,7 @@ def fitness(solution, sol_idx):
           
         loss /= len(dataset.dataset)
 
-        loss=  1.0 / (loss.item()) #
+        loss=  1.0 / (loss.item()+0.00000001) #0.00000001 is added to avoid dividing by zero when loss=0.0
         
     
         return loss
@@ -42,7 +46,7 @@ def FedPerGA(w,modell,datasett):
    global  initial_population, w_size, model, dataset
    dataset = datasett
    model   = modell
-   initial_population= w 
+   initial_population= w
    initial_population=initial_population.tolist()
    num_generations =5# Number of generations.
    num_parents_mating = 3 # Number of solutions to be selected as parents in the mating pool.

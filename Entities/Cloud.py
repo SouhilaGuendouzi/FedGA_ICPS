@@ -20,10 +20,10 @@ class Cloud(object):
         self.dataset=dataset      #used for fedGA
         self.args=args
         self.method_name='fedAVG' #by default
-        self.loss_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
-        self.accuracy_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
-        self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
-        self.accuracy_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs)]
+        self.loss_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
+        self.accuracy_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
+        self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
+        self.accuracy_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
 
        
        
@@ -73,9 +73,18 @@ class Cloud(object):
               for d in self.weights_locals: # for each user
                 weight=[]
                 if isinstance(d, dict):
+                  try:
                      for x in d.items():  #get weights of each layer
                          array = np.array(x[1], dtype='f')#1 is a tensor
                          array= array.flatten()
+                         weight= np.concatenate((weight, array), axis=0)
+                         initial_population[ self.i]= np.array(weight,dtype='f')
+
+                  except:
+                      
+                      for x in d.items():  #get weights of each layer                                       
+                         array = np.array(x[1].cpu(), dtype='f')#1 is a tensor           
+                         array= array.flatten()      
                          weight= np.concatenate((weight, array), axis=0)
                          initial_population[ self.i]= np.array(weight,dtype='f')
                 self.i= self.i+1 # next weight vector (user)
@@ -113,8 +122,10 @@ class Cloud(object):
                  w=self.net
 
             else :
-                print(id)
-                w, loss =  self.clients_list[id].local_update(self.weights_global)
+                if (iter==0):
+                  w, loss =  self.clients_list[id].local_updateFirst()
+                else :
+                     w, loss =  self.clients_list[id].local_update(self.weights_global)
 
             acc, loss = self.clients_list[id].test_img('train')
             #print('loss {} and accuracy {}'.format(loss,acc))
