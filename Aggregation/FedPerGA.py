@@ -19,8 +19,8 @@ loss_function = nn.CrossEntropyLoss()
 def fitness(solution, sol_idx):
 
    
-        loss=0.0
-        model_weights_dict = tg.model_weights_as_dict(model=model.cpu() ,weights_vector=solution)
+        loss=0.0 #.cpu()
+        model_weights_dict = tg.model_weights_as_dict(model=model ,weights_vector=solution)
         model.load_state_dict(model_weights_dict)
 
         for idx, (data, target) in enumerate(dataset):
@@ -31,7 +31,7 @@ def fitness(solution, sol_idx):
           
         loss /= len(dataset.dataset)
 
-        loss=  1.0 / (loss.item()+0.00000001) #0.00000001 is added to avoid dividing by zero when loss=0.0
+        loss=  1.0 / (loss.item()+0.00000001)                                      #0.00000001 is added to avoid dividing by zero when loss=0.0
         
     
         return loss

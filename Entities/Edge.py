@@ -176,7 +176,7 @@ class Edge(object):
         for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
            #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
            
-           data, target = data.cuda(), target.cuda() # add this line
+           #CUDA => ###########data, target = data.cuda(), target.cuda() # add this line
            log_probs =  self.model(data)
            
            # sum up batch loss

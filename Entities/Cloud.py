@@ -83,7 +83,7 @@ class Cloud(object):
                   except:
                       
                       for x in d.items():  #get weights of each layer                                       
-                         array = np.array(x[1].cpu(), dtype='f')#1 is a tensor           
+                         array = np.array(x[1], dtype='f')#1 is a tensor       .cpu()    
                          array= array.flatten()      
                          weight= np.concatenate((weight, array), axis=0)
                          initial_population[ self.i]= np.array(weight,dtype='f')

@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import torch
 from utils.Options import args_parser
-from Entities.Model import Model_B,Model_A,Model_C,Model_D
+from Entities.Model import Model_B,Model_A,Model_C,Model_D,Model_Fashion
 from torch.utils.data import DataLoader
 from Entities.Edge import Edge
 from utils.create_MNIST_datasets import get_FashionMNIST, get_MNIST
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     print(torch.cuda.is_available())
-    net_glob = Model_A(args).to(args.device)
+    net_glob = Model_Fashion(args).to(args.device)
     
     net_glob.train() 
     w=net_glob.state_dict()
@@ -40,13 +40,18 @@ if __name__ == '__main__':
 
     dict_users={}
     model_A=Model_A(args)
-    model_B=Model_A(args)
-    model_C=Model_A(args)
+    model_B=Model_B(args)
+    model_C=Model_C(args)
     model_D=Model_D(args)
+
+
     dict_users[0] = Edge (0,model_A, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #B
     dict_users[1] = Edge (1,model_B, mnist_non_iid_train_dls[1], mnist_non_iid_test_dls[1],args)    #B
     dict_users[2] = Edge (2,model_C, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)     #C  
-    dict_users[3] = Edge (2,model_C, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)     #C  
+    dict_users[3] = Edge (3,model_D, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)     #C
+
+
+     
    
     
 
@@ -86,6 +91,9 @@ if __name__ == '__main__':
     batch_size =50, shuffle =True)
     print('Cloud length',len(test[0]))
     cloud=Cloud(dict_users,net_glob,test[0],args)
+    dict_users[4] = Edge (4,Model_Fashion(args),train, test,args)
+    
+    dict_users[4].local_updateFirst()    #B
   
 
 
@@ -95,10 +103,11 @@ if __name__ == '__main__':
         
 
       weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter)
+      
       print(accuracy_locals_train)
       if (iter==0):
           for i in range(len(dict_users)):
-   
+            print(len(weights_locals[i]))
             accloss[0][i]=accuracy_locals_train[0][i]
             accloss[1][i]=accuracy_locals_test[0][i]
 

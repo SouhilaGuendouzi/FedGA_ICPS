@@ -5,11 +5,47 @@ import torch.nn.functional as F
 import torchvision.models as models
 from torch.hub import load_state_dict_from_url
 
+
+class Model_Fashion(nn.Module):
+  def __init__(self,args):
+    super().__init__()
+
+    # define layers
+    self.features = nn.Sequential(
+
+        nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=2, stride=2),
+        nn.Conv2d(in_channels=6, out_channels=12, kernel_size=5),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=2, stride=2),
+
+    )
+
+    self.classification=(
+        nn.Flatten(),
+        nn.Linear(in_features=12*4*4, out_features=120),
+        nn.Linear(in_features=120, out_features=60),
+        nn.ReLU(),
+        nn.Linear(in_features=60, out_features=10)
+    )
+
+  # define forward function
+  def forward(self, t):
+    t = self.features(t)
+    t = self.classification(t)
+
+    return t
+
+
+    
 class Model_A(nn.Module):
 
     
      def __init__(self, args):
         super(Model_A, self).__init__()
+
+        
         self.conv1 = nn.Conv2d(args.num_channels, 10, kernel_size=5) #for gray images ==> args.num_channels===1 
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.conv2_drop = nn.Dropout2d()
@@ -93,6 +129,7 @@ class Identity(nn.Module):
 class VGG(nn.Module):
     def __init__(self,args):
         super().__init__()
+        
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=32, kernel_size=11, stride=4, padding=0),
             nn.ReLU(),
