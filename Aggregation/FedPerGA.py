@@ -20,7 +20,7 @@ def fitness(solution, sol_idx):
 
    
         loss=0.0 #.cpu()
-        model_weights_dict = tg.model_weights_as_dict(model=model ,weights_vector=solution)
+        model_weights_dict = tg.model_weights_as_dict(model=model.cpu() ,weights_vector=solution)
         model.load_state_dict(model_weights_dict)
 
         for idx, (data, target) in enumerate(dataset):

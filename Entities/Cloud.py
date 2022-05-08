@@ -44,8 +44,7 @@ class Cloud(object):
               self.weights_global=FedAvg(self.weights_locals)
         elif (self.method_name=='fedGA'):
              initial_population=self.weights_locals
-            
-       
+        
              for d in self.weights_locals: # for each user
                 weight=[]
                 if isinstance(d, dict):
@@ -83,7 +82,7 @@ class Cloud(object):
                   except:
                       
                       for x in d.items():  #get weights of each layer                                       
-                         array = np.array(x[1], dtype='f')#1 is a tensor       .cpu()    
+                         array = np.array(x[1].cpu(), dtype='f')#1 is a tensor           
                          array= array.flatten()      
                          weight= np.concatenate((weight, array), axis=0)
                          initial_population[ self.i]= np.array(weight,dtype='f')
@@ -101,31 +100,33 @@ class Cloud(object):
         self.Per_weights=[]
         self.net=copy.deepcopy(self.global_model.state_dict())
         try :
-          del[self.net['conv1.bias']]
-          del[self.net['conv1.weight']]
-          del[self.net['conv2.bias']]
-          del[self.net['conv2.weight']]
-
+          del[self.net['features']]
         except:
              print('error')
 
+
+
         for id in range(len(self.clients_list)):
-            if (self.method_name=='fedPer'):
-                
-                w, loss =  self.clients_list[id].local_updatePer(self.net)
-
-            elif (self.method_name=='fedPerGA'): 
-
-                 self.net=copy.deepcopy(self.global_model.state_dict())
-                 w, loss =  self.clients_list[id].local_updatePer(self.net)
-                 self.net.update(w)
-                 w=self.net
+            
+            if (iter==0):
+                  w, loss =  self.clients_list[id].local_updateFirst()
 
             else :
-                if (iter==0):
-                  w, loss =  self.clients_list[id].local_updateFirst()
-                else :
-                     w, loss =  self.clients_list[id].local_update(self.weights_global)
+            
+            
+             if (self.method_name=='fedPer'):
+                
+                  w, loss =  self.clients_list[id].local_updatePer(self.net)
+
+             elif (self.method_name=='fedPerGA'): 
+
+                # self.net=copy.deepcopy(self.global_model.state_dict())
+                 w, loss =  self.clients_list[id].local_updatePer(self.net)
+                 #self.net.update(w)
+                # w=self.net
+
+             else :
+                 w, loss =  self.clients_list[id].local_update(self.weights_global)
 
             acc, loss = self.clients_list[id].test_img('train')
             #print('loss {} and accuracy {}'.format(loss,acc))

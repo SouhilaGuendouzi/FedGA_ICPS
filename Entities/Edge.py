@@ -19,7 +19,7 @@ class Edge(object):
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
           
          #self.device=device  
-     def local_updateFirst(self):#,weights_global
+     def local_updateFirst(self):# with its own weights
          print(self.id)
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
@@ -60,12 +60,12 @@ class Edge(object):
          return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
-     def local_update(self,weights_global):#
+     def local_update(self,weights_global):#with the global weights
          print(self.id)
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
        
-         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
+         self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
       
         
@@ -94,10 +94,12 @@ class Edge(object):
 
                 batch_loss.append(loss.item())
               
-            
+             
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
           
-      
+
+
+
          return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
@@ -106,7 +108,7 @@ class Edge(object):
          
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
-         self.w=weights_global #mafihch classification layers
+         self.w=weights_global #mafihch feature layers
     
 
          self.weights.update(self.w)
@@ -142,11 +144,7 @@ class Edge(object):
             
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
          try :
-          del[self.net['conv1.bias']]
-          del[self.net['conv1.weight']]
-          del[self.net['conv2.bias']]
-          del[self.net['conv2.weight']]
-
+          del[self.net['features']]
          except:
              print('error')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
@@ -156,7 +154,7 @@ class Edge(object):
 
 
         self.model.eval()
-        #self.data = DataLoader(dataset=dataset, shuffle=True)
+        #   self.data = DataLoader(dataset=dataset, shuffle=True)
         if (datasetName=='test'):
            self.data=self.datasetTest
         elif (datasetName=='train'):
@@ -167,16 +165,16 @@ class Edge(object):
         # testing
         test_loss = 0
         correct = 0
-        #print(len(self.data))
+        #  print(len(self.data))
         #
         # 
-        # (len(self.data.dataset))
+        #(len(self.data.dataset))
         
       
         for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
            #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
            
-           #CUDA => ###########data, target = data.cuda(), target.cuda() # add this line
+           data, target = data.cuda(), target.cuda() # add this line
            log_probs =  self.model(data)
            
            # sum up batch loss
