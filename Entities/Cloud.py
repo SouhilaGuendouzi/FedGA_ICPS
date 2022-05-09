@@ -16,6 +16,7 @@ class Cloud(object):
         self.clients_list=clients
         self.global_model=global_model
         self.weights_global=self.global_model.state_dict()
+        print('Global Model',self.weights_global)
         self.weights_previous=self.global_model.state_dict() # we need it for FedPer
         self.dataset=dataset      #used for fedGA
         self.args=args
@@ -38,7 +39,8 @@ class Cloud(object):
     def aggregate(self,weights_clients,method_name):
         self.method_name=method_name
         self.weights_locals=weights_clients
-        
+
+
         self.i=0
         if (self.method_name=='fedAVG'):
               self.weights_global=FedAvg(self.weights_locals)
@@ -65,9 +67,15 @@ class Cloud(object):
              self.weights_global= self.weights_previous
 
         elif (self.method_name=='fedPerGA'):
-
-              initial_population=self.weights_locals #machi kamline
             
+              for i in range(len(self.weights_locals)):
+                  self.weights_previous=copy.deepcopy(self.global_model.state_dict())
+                  self.weights_previous.update( self.weights_locals[i])
+                  self.weights_locals[i]=copy.deepcopy( self.weights_previous)
+               
+              initial_population=self.weights_locals #machi kamline
+             
+           
        
               for d in self.weights_locals: # for each user
                 weight=[]
@@ -99,13 +107,19 @@ class Cloud(object):
         self.global_model.train() 
         self.Per_weights=[]
         self.net=copy.deepcopy(self.global_model.state_dict())
-        try :
-          del[self.net['features']]
-        except:
-             print('error')
+       
+       
+        for i in range(10):
+         try :
+         
+          del[self.net['features.{}.weight'.format(i)]]
+          del[self.net['features.{}.bias'.format(i)]]
+
+         except:
+             print('')
 
 
-
+      
         for id in range(len(self.clients_list)):
             
             if (iter==0):

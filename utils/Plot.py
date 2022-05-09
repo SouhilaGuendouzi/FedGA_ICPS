@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 class Plot(object):
 
-    def __init__(self,args,accTRAIN,accTEST, lossTRAIN, lossTEST):#,device
+    def __init__(self,args, lossTRAIN, lossTEST,accTRAIN,accTEST):#,device
       self.args=args
       self.test_acc=accTEST
       self.test_loss=lossTEST

@@ -1,7 +1,7 @@
 
 import copy
 import torch
-from torch import nn
+from torch import  nn
 import numpy
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
@@ -27,11 +27,11 @@ def fitness(solution, sol_idx):
         
            prediction = model(data)
    
-           loss += loss_function(prediction, target).detach().numpy() + 0.00000001
+           loss += loss_function(prediction, target).detach().numpy() + 0.00000001  #0.00000001 is added to avoid dividing by zero when loss=0.0
           
         loss /= len(dataset.dataset)
 
-        loss=  1.0 / (loss.item()+0.00000001)                                      #0.00000001 is added to avoid dividing by zero when loss=0.0
+        loss=  1.0 / (loss.item())                                     
         
     
         return loss
@@ -46,13 +46,20 @@ def FedPerGA(w,modell,datasett):
    global  initial_population, w_size, model, dataset
    dataset = datasett
    model   = modell
-   initial_population= w
+
+   initial_population=w
+
+   #for param in model.parameters():
+    #param.requires_grad = False
+
+
+   
+  
    initial_population=initial_population.tolist()
    num_generations =5# Number of generations.
    num_parents_mating = 3 # Number of solutions to be selected as parents in the mating pool.
   
-  
-   #print(initial_population)
+
    parent_selection_type = "rank" # Type of parent selection.
    crossover_type = "single_point" # Type of the crossover operator.
    mutation_type = "random" # Type of the mutation operator.

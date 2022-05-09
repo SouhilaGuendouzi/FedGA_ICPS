@@ -17,10 +17,10 @@ class Edge(object):
          if torch.cuda.is_available():
               self.model.cuda()
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-          
+     
          #self.device=device  
      def local_updateFirst(self):# with its own weights
-         print(self.id)
+        
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
        
@@ -55,13 +55,23 @@ class Edge(object):
               
             
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
-          
+         self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
+         for i in range(10):
+          try :
+           
+           del[self.weights['features.{}.weight'.format(i)]]
       
-         return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
+           del[self.weights['features.{}.bias'.format(i)]]
+
+          except:
+             print('')
+            
+      
+         return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
      def local_update(self,weights_global):#with the global weights
-         print(self.id)
+ 
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
        
@@ -96,11 +106,12 @@ class Edge(object):
               
              
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
-          
+           
+         
 
 
-
-         return self.model.state_dict(), sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
+         
+         return  self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
         
@@ -143,10 +154,18 @@ class Edge(object):
 
             
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
-         try :
-          del[self.net['features']]
-         except:
-             print('error')
+         for i in range(10):
+          try :
+           
+           del[self.weights['features.{}.weight'.format(i)]]
+      
+           del[self.weights['features.{}.bias'.format(i)]]
+
+          except:
+             print('')
+         
+
+
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 

@@ -105,7 +105,7 @@ if __name__ == '__main__':
       print(accuracy_locals_train)
       if (iter==0):
           for i in range(len(dict_users)):
-            print(len(weights_locals[i]))
+   
             accloss[0][i]=accuracy_locals_train[0][i]
             accloss[1][i]=accuracy_locals_test[0][i]
 
@@ -116,5 +116,23 @@ if __name__ == '__main__':
 
       net_glob=cloud.aggregate(weights_locals,args.aggr)
 
-    print("After Aggregation")
+    print("After Last Aggregation")
     weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter+1)
+    aclo=[[0 for _ in range(len(dict_users))] for _ in range(2)]
+    print(accuracy_locals_train)
+    for i in range(len(dict_users)):
+            print(len(weights_locals[i]))
+            aclo[0][i]=accuracy_locals_train[iter+1][i]
+            aclo[1][i]=accuracy_locals_test[iter+1][i]
+
+    row=aclo
+    col=['Client {}'.format(j) for j in range(len(dict_users))]
+    print(tabulate(row, headers=col, tablefmt="fancy_grid"))
+
+
+    plt = Plot(args,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test)
+    
+    plt.get_graph_train('loss',args.aggr)
+    plt.get_graph_test('accuracy',args.aggr)
+    plt.get_graph_test('loss',args.aggr)
+    plt.get_graph_train('accuracy',args.aggr)
