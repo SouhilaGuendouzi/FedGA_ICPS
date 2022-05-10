@@ -85,7 +85,7 @@ class Edge(object):
          self.w=weights_global
 
 
-         #self.model.load_state_dict(self.w)
+         self.model.load_state_dict(self.w)
 
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
        
@@ -108,8 +108,12 @@ class Edge(object):
                 batch_loss.append(loss.item())
               
              
-
-            epoch_loss.append(sum(batch_loss)/len(batch_loss))
+            if (self.loss>sum(batch_loss)/len(batch_loss)):
+                self.loss=sum(batch_loss)/len(batch_loss)
+                epoch_loss.append(sum(batch_loss)/len(batch_loss))
+            else :
+                epoch_loss.append(self.loss)
+                self.model.load_state_dict(self.previous_weights)
            
          
 
@@ -124,10 +128,9 @@ class Edge(object):
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
          self.w=weights_global #mafihch feature layers
+         self.previous_weights=self.model.state_dict()
     
-
          self.weights.update(self.w)
-
 
 
          #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
@@ -153,9 +156,15 @@ class Edge(object):
                 optimizer.step()
 
                 batch_loss.append(loss.item())
-                
-            epoch_loss.append(sum(batch_loss)/len(batch_loss))
 
+
+            if (self.loss>sum(batch_loss)/len(batch_loss)):
+                  self.loss=sum(batch_loss)/len(batch_loss)
+                  epoch_loss.append(sum(batch_loss)/len(batch_loss))
+            else :
+                epoch_loss.append(self.loss)
+                self.model.load_state_dict(self.previous_weights)
+            
             
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
          for i in range(10):
