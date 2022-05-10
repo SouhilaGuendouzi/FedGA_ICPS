@@ -69,7 +69,7 @@ class Edge(object):
           except:
              print('')
             
-         print(self.weights)
+      
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 

@@ -2,77 +2,100 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class Plot(object):
-
-    def __init__(self,args, lossTRAIN, lossTEST,accTRAIN,accTEST):#,device
-      self.args=args
-      self.test_acc=accTEST
-      self.test_loss=lossTEST
-      self.train_acc=accTRAIN
-      self.train_loss=lossTRAIN 
-      self.clients=[[0 for _ in range(self.args.epochs)] for _ in range(self.args.num_users)]
 
 
-    def get_graph_train(self,eval,method):
-        
-    
+def accuracy_train (args, accTRAIN):
+    clients=[[0 for _ in range(args.epochs)] for _ in range(args.num_users)]
 
-        x=range(self.args.epochs)
-        if (eval=='accuracy'):
+    x=range(args.epochs)
 
-           for i in range(self.args.epochs):
-              for j in range(self.args.num_users):
-                 self.clients[j][i]= self.train_acc[i][j]
+
+    for i in range(args.epochs):
+      for j in range(args.num_users):
+         clients[j][i]= accTRAIN[i][j]
               
       
-           #plt.ylim([0, 100])
-           plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
-           plt.ylabel('{} Train Accuracy'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_train_accuracy_{}.png'.format(method,self.args.iid))
+   #plt.ylim([0, 100])
+    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt.ylabel('{} Train Accuracy'.format(args.aggr))
+    plt.xlabel('Communication rounds')
+    plt.savefig('./save/{}_train_accuracy_{}.png'.format(args.aggr,args.iid))
+    for j in range(args.num_users):
+           plt.plot(x,clients[j])
 
-        elif (eval=='loss'):
-           for  i in range(self.args.epochs):
-             for j in range(self.args.num_users):
-                 self.clients[j][i]= self.train_loss[i][j]
-           plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
-           plt.ylabel('{} Train Loss'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_train_loss_{}.png'.format(method,self.args.iid))
-        plt.figure()
-        for j in range(self.args.num_users):
-           plt.plot(x,self.clients[j])
-       
+    #plt.figure()
 
 
-    def get_graph_test(self,eval,method):
-   
-        
-        x=range(self.args.epochs)
-        if (eval=='accuracy'):
-            for i in range(self.args.epochs):
-              for j in range(self.args.num_users):
-                 self.clients[j][i]= self.test_acc[i][j]
-            plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
-            plt.ylabel('{} test Accuracy'.format(method))
-            plt.xlabel('Communication rounds')
-            #plt.ylim([0, 100])
-            plt.savefig('./save/{}_test_accuracy_{}.png'.format(method,self.args.iid))
-        elif (eval=='loss'):
-           for i in range(self.args.epochs):
-              for j in range(self.args.num_users):
-                 self.clients[j][i]= self.test_loss[i][j]
-           plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
-           plt.ylabel('{} test Loss'.format(method))
-           plt.xlabel('Communication rounds')
-           plt.savefig('./save/{}_test_loss_{}.png'.format(method,self.args.iid))
-        plt.figure()
-        
-        for j in range(self.args.num_users):
-           plt.plot(x,self.clients[j])
-        
+def loss_train (args, lossTRAIN):
+    clients=[[0 for _ in range(args.epochs)] for _ in range(args.num_users)]
+
+    x=range(args.epochs)
+
+
+    for i in range(args.epochs):
+      for j in range(args.num_users):
+         clients[j][i]= lossTRAIN[i][j]
+              
+      
+    #plt.ylim([0, 100])
+    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt.ylabel('{} Train Loss'.format(args.aggr))
+    plt.xlabel('Communication rounds')
+    plt.savefig('./save/{}_train_loss_{}.png'.format(args.aggr,args.iid))
+    for j in range(args.num_users):
+            plt.plot(x,clients[j])
+
+    #plt.figure()
+
+
+
+
+def accuracy_test (args, accTest):
+    clients=[[0 for _ in range(args.epochs)] for _ in range(args.num_users)]
+
+    x=range(args.epochs)
+
+
+    for i in range(args.epochs):
+      for j in range(args.num_users):
+         clients[j][i]= accTest[i][j]
+              
+      
+   #plt.ylim([0, 100])
+    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt.ylabel('{} Test Accuracy'.format(args.aggr))
+    plt.xlabel('Communication rounds')
+    plt.savefig('./save/{}_test_accuracy_{}.png'.format(args.aggr,args.iid))
+    for j in range(args.num_users):
+           plt.plot(x,clients[j])
+    #plt.figure()
+def loss_test (args, lossTest):
+    clients=[[0 for _ in range(args.epochs)] for _ in range(args.num_users)]
+
+    x=range(args.epochs)
+
+
+    for i in range(args.epochs):
+      for j in range(args.num_users):
+         clients[j][i]= lossTest[i][j]
+              
+      
+    #plt.ylim([0, 100])
+    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt.ylabel('{} Test Loss'.format(args.aggr))
+    plt.xlabel('Communication rounds')
+    plt.savefig('./save/{}_test_loss_{}.png'.format(args.aggr,args.iid))
     
-    def Plot_table(data,col):
+        
+    for j in range(args.num_users):
+           plt.plot(x,clients[j])
+
+    #plt.figure()
+
+
+
+
+def Plot_table(data,col):
         
       fig, ax =plt.subplots(1,1)
       data=data
