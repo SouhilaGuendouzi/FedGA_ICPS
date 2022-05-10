@@ -12,7 +12,9 @@ class Edge(object):
          self.datasetTrain = datasetTrain
          self.datasetTest = datasetTest
          self.model=model
+         #print(self.model.state_dict())
          self.accuracy=None
+         self.loss=None
          self.args=args
          if torch.cuda.is_available():
               self.model.cuda()
@@ -55,6 +57,7 @@ class Edge(object):
               
             
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
+            self.loss=sum(batch_loss)/len(batch_loss)
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
          for i in range(10):
           try :
@@ -66,7 +69,7 @@ class Edge(object):
           except:
              print('')
             
-      
+         print(self.weights)
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
@@ -74,7 +77,7 @@ class Edge(object):
  
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
-       
+         self.previous_weights=self.model.state_dict()
          self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
       
@@ -105,6 +108,7 @@ class Edge(object):
                 batch_loss.append(loss.item())
               
              
+
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
            
          
@@ -164,8 +168,7 @@ class Edge(object):
           except:
              print('')
          
-
-
+     
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 

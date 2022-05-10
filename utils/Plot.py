@@ -34,7 +34,7 @@ class Plot(object):
         elif (eval=='loss'):
            for  i in range(self.args.epochs):
              for j in range(self.args.num_users):
-                 self.clients[j][i]= self.train_acc[i][j]
+                 self.clients[j][i]= self.train_loss[i][j]
            plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
            plt.ylabel('{} Train Loss'.format(method))
            plt.xlabel('Communication rounds')
@@ -52,7 +52,7 @@ class Plot(object):
         if (eval=='accuracy'):
             for i in range(self.args.epochs):
               for j in range(self.args.num_users):
-                 self.clients[j][i]= self.train_acc[i][j]
+                 self.clients[j][i]= self.test_acc[i][j]
             plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
             plt.ylabel('{} test Accuracy'.format(method))
             plt.xlabel('Communication rounds')
@@ -61,7 +61,7 @@ class Plot(object):
         elif (eval=='loss'):
            for i in range(self.args.epochs):
               for j in range(self.args.num_users):
-                 self.clients[j][i]= self.train_acc[i][j]
+                 self.clients[j][i]= self.test_loss[i][j]
            plt.legend(['Client {}'.format(j) for j in range(self.args.num_users)])
            plt.ylabel('{} test Loss'.format(method))
            plt.xlabel('Communication rounds')

@@ -16,7 +16,7 @@ class Cloud(object):
         self.clients_list=clients
         self.global_model=global_model
         self.weights_global=self.global_model.state_dict()
-        print('Global Model',self.weights_global)
+        #print('Global Model',self.global_model.classification)
         self.weights_previous=self.global_model.state_dict() # we need it for FedPer
         self.dataset=dataset      #used for fedGA
         self.args=args
@@ -68,16 +68,17 @@ class Cloud(object):
 
         elif (self.method_name=='fedPerGA'):
             
-              for i in range(len(self.weights_locals)):
-                  self.weights_previous=copy.deepcopy(self.global_model.state_dict())
-                  self.weights_previous.update( self.weights_locals[i])
-                  self.weights_locals[i]=copy.deepcopy( self.weights_previous)
+              #for i in range(len(self.weights_locals)):
+                  #self.weights_previous=copy.deepcopy(self.global_model.state_dict())
+                  #self.weights_previous.update( self.weights_locals[i])
+                  #self.weights_locals[i]=copy.deepcopy( self.weights_previous)
                
               initial_population=self.weights_locals #machi kamline
              
            
        
               for d in self.weights_locals: # for each user
+                print(len(d))
                 weight=[]
                 if isinstance(d, dict):
                   try:
@@ -97,26 +98,26 @@ class Cloud(object):
                 self.i= self.i+1 # next weight vector (user)
               
 
-              self.weights_global = FedPerGA(initial_population,self.global_model,self.dataset)
+              self.weights_global = FedPerGA(initial_population,self.global_model.classification,self.dataset)
 
-        self.global_model.load_state_dict(self.weights_global)
+        self.global_model.classification.load_state_dict(self.weights_global)
 
         return self.global_model
     
     def Launch_local_updates(self,iter):
         self.global_model.train() 
         self.Per_weights=[]
-        self.net=copy.deepcopy(self.global_model.state_dict())
+        self.net=copy.deepcopy(self.global_model.classification.state_dict())
        
        
-        for i in range(10):
-         try :
+       # for i in range(10):
+        # try :
          
-          del[self.net['features.{}.weight'.format(i)]]
-          del[self.net['features.{}.bias'.format(i)]]
+        #  del[self.net['features.{}.weight'.format(i)]]
+        #  del[self.net['features.{}.bias'.format(i)]]
 
-         except:
-             print('')
+         #except:
+          #   print('')
 
 
       
@@ -130,16 +131,17 @@ class Cloud(object):
             
              if (self.method_name=='fedPer'):
                 
-                  w, loss =  self.clients_list[id].local_updatePer(self.net)
+                  w, loss =  self.clients_list[id].local_updatePer(self.net)  #self.net== classification layer
 
              elif (self.method_name=='fedPerGA'): 
 
                 # self.net=copy.deepcopy(self.global_model.state_dict())
-                 w, loss =  self.clients_list[id].local_updatePer(self.net)
+                 w, loss =  self.clients_list[id].local_updatePer(self.net) #self.net== classification layer
+
                  #self.net.update(w)
                 # w=self.net
 
-             else :
+             else : # for fedAVG
                  w, loss =  self.clients_list[id].local_update(self.weights_global)
 
             acc, loss = self.clients_list[id].test_img('train')

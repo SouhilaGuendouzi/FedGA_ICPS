@@ -30,17 +30,19 @@ if __name__ == '__main__':
 
     net_glob.train() 
     w=net_glob.state_dict()
-    weights_locals=[]
+    
 ############################ Prepare Clients#######################################################################################
 
   
 
-    
+    weights_locals=[]
     mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
     n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
     batch_size =50, shuffle =True) #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch 
 
     dict_users={}
+ 
+
     model_A=Model_A().to(args.device)
     model_B=Model_B().to(args.device)
     model_C=Model_C().to(args.device)
@@ -71,6 +73,7 @@ if __name__ == '__main__':
     batch_size =50, shuffle =True)
     print('Cloud length',len(test[0]))
     cloud=Cloud(dict_users,net_glob,test[0],args)
+
     
 
 
@@ -131,5 +134,6 @@ if __name__ == '__main__':
     
     plt.get_graph_train('loss',args.aggr)
     plt.get_graph_test('accuracy',args.aggr)
-    plt.get_graph_test('loss',args.aggr)
+  
     plt.get_graph_train('accuracy',args.aggr)
+    plt.get_graph_test('loss',args.aggr)

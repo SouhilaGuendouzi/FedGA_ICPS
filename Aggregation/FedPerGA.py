@@ -1,13 +1,9 @@
 
-import copy
-import torch
+from pyexpat import features
 from torch import  nn
-import numpy
-from torch.utils.data import DataLoader, Dataset
-import torch.nn.functional as F
 import pygad
 import pygad.torchga as tg
-
+from Entities.Model import Feature_extractor_Layers
 
 #https://neptune.ai/blog/train-pytorch-models-using-genetic-algorithm-with-pygad ==> Ahmed Gad
 
@@ -24,8 +20,8 @@ def fitness(solution, sol_idx):
         model.load_state_dict(model_weights_dict)
 
         for idx, (data, target) in enumerate(dataset):
-        
-           prediction = model(data)
+           feature=features(data)
+           prediction = model(feature)
    
            loss += loss_function(prediction, target).detach().numpy() + 0.00000001  #0.00000001 is added to avoid dividing by zero when loss=0.0
           
@@ -43,11 +39,14 @@ def callback_generation(ga_instance):
 
 def FedPerGA(w,modell,datasett):
    print('begin FedGA')
-   global  initial_population, w_size, model, dataset
+   global  initial_population, w_size, model, dataset, features
    dataset = datasett
    model   = modell
+   features= Feature_extractor_Layers()
+
 
    initial_population=w
+   
 
    #for param in model.parameters():
     #param.requires_grad = False
@@ -57,7 +56,7 @@ def FedPerGA(w,modell,datasett):
   
    initial_population=initial_population.tolist()
    num_generations =5# Number of generations.
-   num_parents_mating = 3 # Number of solutions to be selected as parents in the mating pool.
+   num_parents_mating = 4 # Number of solutions to be selected as parents in the mating pool.
   
 
    parent_selection_type = "rank" # Type of parent selection.
