@@ -12,10 +12,10 @@ class Edge(object):
          self.datasetTrain = datasetTrain
          self.datasetTest = datasetTest
          self.model=model
-         #print(self.model.state_dict())
          self.accuracy=None
          self.loss=None
          self.args=args
+
          if torch.cuda.is_available():
               self.model.cuda()
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -25,28 +25,18 @@ class Edge(object):
         
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
-       
-         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
-      
-        
-         #self.w=weights_global
          self.w= self.model.state_dict()
-
-         #self.model.load_state_dict(self.w)
-
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
-       
          epoch_loss = []
-        
-         
+    
          for iter in range(self.args.local_ep):
            
             batch_loss = []
+
             for batch_idx, (images, labels) in enumerate(self.data):
-                #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
-                images, labels = images.to(self.device), labels.to(self.device)
                
+                images, labels = images.to(self.device), labels.to(self.device)
                 self.model.zero_grad()
                 log_probs = self.model(images)
                 loss = self.loss_func(log_probs, labels)
@@ -58,7 +48,7 @@ class Edge(object):
             
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
             self.loss=sum(batch_loss)/len(batch_loss)
-         self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
+         self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          for i in range(10):
           try :
            
@@ -69,22 +59,18 @@ class Edge(object):
           except:
              print('')
             
-      
+         # Here ==> self.weights contains only classification layers (fully connected layers)
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
-     def local_update(self,weights_global):#with the global weights
+     def local_update(self,weights_global):   #with the global layers weights in case of FedAVG, with similar models
  
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.previous_weights=self.model.state_dict()
          self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
-      
-        
          self.w=weights_global
-
-
          self.model.load_state_dict(self.w)
 
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
@@ -96,9 +82,8 @@ class Edge(object):
            
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
-                #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
+
                 images, labels = images.to(self.device), labels.to(self.device)
-               
                 self.model.zero_grad()
                 log_probs = self.model(images)
                 loss = self.loss_func(log_probs, labels)
@@ -115,10 +100,7 @@ class Edge(object):
                 epoch_loss.append(self.loss)
                 self.model.load_state_dict(self.previous_weights)
            
-         
-
-
-         
+        
          return  self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
@@ -126,14 +108,11 @@ class Edge(object):
      def local_updatePer(self,weights_global):
          
          loss_func = nn.CrossEntropyLoss()
-         self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
-         self.w=weights_global #mafihch feature layers
+         self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
+         self.w=weights_global #it contains only fully connected layers
          self.previous_weights=self.model.state_dict()
     
          self.weights.update(self.w)
-
-
-         #self.data = DataLoader(self.datasetTrain, shuffle=True,batch_size=self.args.local_bs)
          self.data = self.datasetTrain
          self.model.load_state_dict(self.weights)
          self.model.train()
@@ -146,15 +125,12 @@ class Edge(object):
           
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
-                #print('Client: {} and dataset Len: {}'.format(self.id,len(images)))
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
                 self.model.zero_grad()
                 log_probs = self.model(images)
-
                 loss = loss_func(log_probs, labels)
                 loss.backward()
                 optimizer.step()
-
                 batch_loss.append(loss.item())
 
 
@@ -185,7 +161,7 @@ class Edge(object):
 
 
         self.model.eval()
-        #   self.data = DataLoader(dataset=dataset, shuffle=True)
+        #self.data = DataLoader(dataset=dataset, shuffle=True)
         if (datasetName=='test'):
            self.data=self.datasetTest
         elif (datasetName=='train'):
@@ -193,19 +169,15 @@ class Edge(object):
         self.w=self.model.state_dict()
         
        
-        # testing
+    
         test_loss = 0
         correct = 0
-        #  print(len(self.data))
-        #
-        # 
-        #(len(self.data.dataset))
+    
         
-      
         for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
-           #print('Client: {} and dataset Len: {}'.format(self.id,len(data)))
-           
-           data, target = data.cuda(), target.cuda() # add this line
+        
+    
+           data, target = data.cuda(), target.cuda() # add this line for GPU 
            log_probs =  self.model(data)
            
            # sum up batch loss

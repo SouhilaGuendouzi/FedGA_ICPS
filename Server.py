@@ -18,7 +18,7 @@ from torchvision import transforms
 from tabulate import tabulate
 import time
 
-from torchsummary import summary
+
 
 if __name__ == '__main__':
     # parse args
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     weights_locals=[]
     mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
     n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
-    batch_size =50, shuffle =True) #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch 
+    batch_size =50, shuffle =True)                            #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch 
 
     dict_users={}
  
@@ -49,10 +49,10 @@ if __name__ == '__main__':
     model_D=Model_D().to(args.device)
 
 
-    dict_users[0] = Edge (0,model_A, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #B
+    dict_users[0] = Edge (0,model_A, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #A
     dict_users[1] = Edge (1,model_B, mnist_non_iid_train_dls[1], mnist_non_iid_test_dls[1],args)    #B
     dict_users[2] = Edge (2,model_C, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)     #C  
-    dict_users[3] = Edge (3,model_D, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)     #C
+    dict_users[3] = Edge (3,model_D, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)     #D
 
 
 
@@ -60,11 +60,6 @@ if __name__ == '__main__':
     print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
 
    
-    
-
-  
-   
-
 ########################## Prapare Cloud #########################################################################################
  
      
@@ -138,10 +133,4 @@ if __name__ == '__main__':
     loss_test(args,loss_locals_test)
 
 
-    #plt = Plot(args,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test)
-    
-    #plt.get_graph_train('loss',args.aggr)
-    #plt.get_graph_test('accuracy',args.aggr)
   
-    #plt.get_graph_train('accuracy',args.aggr)
-    #plt.get_graph_test('loss',args.aggr)

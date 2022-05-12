@@ -46,10 +46,6 @@ def loss_train (args, lossTRAIN):
             plt.plot(x,clients[j])
 
     #plt.figure()
-
-
-
-
 def accuracy_test (args, accTest):
     clients=[[0 for _ in range(args.epochs)] for _ in range(args.num_users)]
 
