@@ -1,5 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt1
+import matplotlib.pyplot as plt2
+import matplotlib.pyplot as plt3
+import matplotlib.pyplot as plt4
 
 
 
@@ -16,12 +19,12 @@ def accuracy_train (args, accTRAIN):
               
       
    #plt.ylim([0, 100])
-    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
-    plt.ylabel('{} Train Accuracy'.format(args.aggr))
-    plt.xlabel('Communication rounds')
-    plt.savefig('./save/{}_train_accuracy_{}.png'.format(args.aggr,args.iid))
+    plt1.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt1.ylabel('{} Train Accuracy'.format(args.aggr))
+    plt1.xlabel('Communication rounds')
+    plt1.savefig('./save/{}_train_accuracy_{}.png'.format(args.aggr,args.iid))
     for j in range(args.num_users):
-           plt.plot(x,clients[j])
+           plt1.plot(x,clients[j])
 
     #plt.figure()
 
@@ -38,12 +41,12 @@ def loss_train (args, lossTRAIN):
               
       
     #plt.ylim([0, 100])
-    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
-    plt.ylabel('{} Train Loss'.format(args.aggr))
-    plt.xlabel('Communication rounds')
-    plt.savefig('./save/{}_train_loss_{}.png'.format(args.aggr,args.iid))
+    plt2.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt2.ylabel('{} Train Loss'.format(args.aggr))
+    plt2.xlabel('Communication rounds')
+    plt2.savefig('./save/{}_train_loss_{}.png'.format(args.aggr,args.iid))
     for j in range(args.num_users):
-            plt.plot(x,clients[j])
+            plt2.plot(x,clients[j])
 
     #plt.figure()
 def accuracy_test (args, accTest):
@@ -58,13 +61,14 @@ def accuracy_test (args, accTest):
               
       
    #plt.ylim([0, 100])
-    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
-    plt.ylabel('{} Test Accuracy'.format(args.aggr))
-    plt.xlabel('Communication rounds')
-    plt.savefig('./save/{}_test_accuracy_{}.png'.format(args.aggr,args.iid))
+    plt3.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt3.ylabel('{} Test Accuracy'.format(args.aggr))
+    plt3.xlabel('Communication rounds')
+    plt3.savefig('./save/{}_test_accuracy_{}.png'.format(args.aggr,args.iid))
     for j in range(args.num_users):
-           plt.plot(x,clients[j])
+           plt3.plot(x,clients[j])
     #plt.figure()
+
 def loss_test (args, lossTest):
     clients=[[0 for _ in range(args.epochs)] for _ in range(args.num_users)]
 
@@ -77,14 +81,14 @@ def loss_test (args, lossTest):
               
       
     #plt.ylim([0, 100])
-    plt.legend(['Client {}'.format(j) for j in range(args.num_users)])
-    plt.ylabel('{} Test Loss'.format(args.aggr))
-    plt.xlabel('Communication rounds')
-    plt.savefig('./save/{}_test_loss_{}.png'.format(args.aggr,args.iid))
+    plt4.legend(['Client {}'.format(j) for j in range(args.num_users)])
+    plt4.ylabel('{} Test Loss'.format(args.aggr))
+    plt4.xlabel('Communication rounds')
+    plt4.savefig('./save/{}_test_loss_{}.png'.format(args.aggr,args.iid))
     
         
     for j in range(args.num_users):
-           plt.plot(x,clients[j])
+           plt4.plot(x,clients[j])
 
     #plt.figure()
 

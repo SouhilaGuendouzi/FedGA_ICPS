@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Python version: 3.6
+# Python version: 3.10
 # https://pytorch.org/vision/stable/datasets.html
 
 import matplotlib
@@ -12,9 +12,8 @@ from torch.utils.data import DataLoader
 from Entities.Edge import Edge
 from utils.create_MNIST_datasets import get_FashionMNIST, get_MNIST
 from Entities.Cloud import Cloud
-from utils.Plot import accuracy_test, accuracy_train, loss_test, loss_train
-from torchvision import datasets
-from torchvision import transforms
+#from utils.Plot import accuracy_test, accuracy_train, loss_test, loss_train
+from utils.Graph import Plot_Graphes
 from tabulate import tabulate
 import time
 
@@ -127,10 +126,12 @@ if __name__ == '__main__':
     col=['Client {}'.format(j) for j in range(len(dict_users))]
     print(tabulate(row, headers=col, tablefmt="fancy_grid"))
 
-    accuracy_train(args,accuracy_locals_train)
-    loss_train(args,loss_locals_train)
-    accuracy_test(args,accuracy_locals_test)
-    loss_test(args,loss_locals_test)
+    Plot_Graphes(args,accuracy_locals_train,accuracy_locals_test,loss_locals_train,loss_locals_test)
+
+    #accuracy_train(args,accuracy_locals_train)
+    #loss_train(args,loss_locals_train)
+    #accuracy_test(args,accuracy_locals_test)
+    #loss_test(args,loss_locals_test)
 
 
   

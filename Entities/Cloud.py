@@ -62,9 +62,9 @@ class Cloud(object):
 
              self.weights_global=FedPer(self.weights_locals, self.global_model)
 
-             self.weights_previous=self.global_model.state_dict()
-             self.weights_previous.update(self.weights_global)
-             self.weights_global= self.weights_previous
+             #self.weights_previous=self.global_model.state_dict()
+             #self.weights_previous.update(self.weights_global)
+             #self.weights_global= self.weights_previous
 
         elif (self.method_name=='fedPerGA'):
             
