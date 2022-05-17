@@ -8,7 +8,6 @@ matplotlib.use('Agg')
 import torch
 from utils.Options import args_parser
 from Entities.Model import Model_B,Model_A,Model_C,Model_D,Model_Fashion
-from torch.utils.data import DataLoader
 from Entities.Edge import Edge
 from utils.create_MNIST_datasets import get_FashionMNIST, get_MNIST
 from Entities.Cloud import Cloud
@@ -68,35 +67,14 @@ if __name__ == '__main__':
     print('Cloud length',len(test[0]))
     cloud=Cloud(dict_users,net_glob,test[0],args)
 
-    
 
-
-
-########################## Initial Phase #########################################################################################
- 
-
-
-  #  accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
-  #  weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(0)
-  #  for i in range(len(dict_users)):
-  #          print(len(weights_locals[i]))
-  #          accloss[0][i]=accuracy_locals_train[0][i]
-   #         accloss[1][i]=accuracy_locals_test[0][i]
-
-   # row=accloss
-   # col=['Client {}'.format(j) for j in range(len(dict_users))]
-   # print(tabulate(row, headers=col, tablefmt="fancy_grid"))
-
-
-######################### Begin process #########################################################################################
+########################## Begin process #########################################################################################
 
     accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
     for iter in range(args.epochs):
         
 
       weights_locals,loss_locals_train,loss_locals_test, accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter)
-      
-      #print(accuracy_locals_train)
       if (iter==0):
           for i in range(len(dict_users)):
    
@@ -112,11 +90,12 @@ if __name__ == '__main__':
 
     print("After Last Aggregation")
     weights_locals, loss_locals_train,loss_locals_test,accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter+1)
+
+
+    
+########################## Evaluation #########################################################################################
     aclo=[[0 for _ in range(len(dict_users))] for _ in range(2)]
-    print(accuracy_locals_train)
-    print(accuracy_locals_test)
-    print(loss_locals_train)
-    print(loss_locals_test)
+
     for i in range(len(dict_users)):
           
             aclo[0][i]=accuracy_locals_train[iter+1][i]
@@ -127,11 +106,5 @@ if __name__ == '__main__':
     print(tabulate(row, headers=col, tablefmt="fancy_grid"))
 
     Plot_Graphes(args,accuracy_locals_train,accuracy_locals_test,loss_locals_train,loss_locals_test)
-
-    #accuracy_train(args,accuracy_locals_train)
-    #loss_train(args,loss_locals_train)
-    #accuracy_test(args,accuracy_locals_test)
-    #loss_test(args,loss_locals_test)
-
 
   

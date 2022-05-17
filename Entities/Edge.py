@@ -12,7 +12,8 @@ class Edge(object):
          self.datasetTrain = datasetTrain
          self.datasetTest = datasetTest
          self.model=model
-         self.accuracy=None
+         self.Trainaccuracy=None
+         self.Testaccuracy=None
          self.loss=None
          self.args=args
 

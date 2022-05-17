@@ -16,7 +16,6 @@ class Cloud(object):
         self.clients_list=clients
         self.global_model=global_model
         self.weights_global=self.global_model.state_dict()
-        #print('Global Model',self.global_model.classification)
         self.weights_previous=self.global_model.state_dict() # we need it for FedPer
         self.dataset=dataset      #used for fedGA
         self.args=args
@@ -25,7 +24,7 @@ class Cloud(object):
         self.accuracy_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
         self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
         self.accuracy_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
-
+        
        
        
         if self.args.all_clients: 
