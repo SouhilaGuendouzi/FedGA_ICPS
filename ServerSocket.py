@@ -7,40 +7,24 @@ import pygad
 import pygad.nn
 import pygad.gann
 import numpy
+# import libraries 
+import torch 
+import torch.nn as nn  
+from Aggregation.FedAVG import FedAvg
 
-model = None
 
-# Preparing the NumPy array of the inputs.
-data_inputs = numpy.array([[1, 1],
-                           [1, 0],
-                           [0, 1],
-                           [0, 0]])
 
-# Preparing the NumPy array of the outputs.
-data_outputs = numpy.array([0, 
-                            1, 
-                            1, 
-                            0])
 
-num_classes = 2
-num_inputs = 2
-
-num_solutions = 6
-GANN_instance = pygad.gann.GANN(num_solutions=num_solutions,
-                                num_neurons_input=num_inputs,
-                                num_neurons_hidden_layers=[2],
-                                num_neurons_output=num_classes,
-                                hidden_activations=["relu"],
-                                output_activation="softmax")
 
 class SocketThread(threading.Thread):
 
-    def __init__(self, connection, client_info, buffer_size=1024, recv_timeout=5):
+    def __init__(self, connection, client_info,args, buffer_size=100000, recv_timeout=5):
         threading.Thread.__init__(self)
         self.connection = connection
         self.client_info = client_info
         self.buffer_size = buffer_size
         self.recv_timeout = recv_timeout
+        self.args=args
 
     def recv(self):
         received_data = b""
@@ -78,16 +62,12 @@ class SocketThread(threading.Thread):
                 print("Error Receiving Data from the Client: {msg}.\n".format(msg=e))
                 return None, 0
 
-    def model_averaging(self, model, other_model):
-        model_weights = pygad.nn.layers_weights(last_layer=model, initial=False)
-        other_model_weights = pygad.nn.layers_weights(last_layer=other_model, initial=False)
-        
-        new_weights = numpy.array(model_weights + other_model_weights)/2
-
-        pygad.nn.update_layers_trained_weights(last_layer=model, final_weights=new_weights)
+  
 
     def reply(self, received_data):
-        global GANN_instance, data_inputs, data_outputs, model
+        global global_weights
+        global weights_locals 
+        weights_locals = [self.weights_global for i in range(self.args.num_users)]
         if (type(received_data) is dict):
             if (("data" in received_data.keys()) and ("subject" in received_data.keys())):
                 subject = received_data["subject"]
@@ -96,46 +76,15 @@ class SocketThread(threading.Thread):
                 print("Replying to the Client.")
                 if subject == "echo":
                     try:
-                        data = {"subject": "model", "data": GANN_instance}
+                        data = {"subject": "model", "data": global_weights}
                         response = pickle.dumps(data)
                     except BaseException as e:
                         print("Error Decoding the Client's Data: {msg}.\n".format(msg=e))
                 elif subject == "model":
                     try:
-                        GANN_instance = received_data["data"]
-                        best_model_idx = received_data["best_solution_idx"]
 
-                        best_model = GANN_instance.population_networks[best_model_idx]
-                        if model is None:
-                            model = best_model
-                        else:
-                            predictions = pygad.nn.predict(last_layer=model, data_inputs=data_inputs)
-    
-                            error = numpy.sum(numpy.abs(predictions - data_outputs))
-    
-                            # In case a client sent a model to the server despite that the model error is 0.0. In this case, no need to make changes in the model.
-                            if error == 0:
-                                data = {"subject": "done", "data": None}
-                                response = pickle.dumps(data)
-                                return
+                    
 
-                            self.model_averaging(model, best_model)
-
-                        # print(best_model.trained_weights)
-                        # print(model.trained_weights)
-
-                        predictions = pygad.nn.predict(last_layer=model, data_inputs=data_inputs)
-                        print("Model Predictions: {predictions}".format(predictions=predictions))
-
-                        error = numpy.sum(numpy.abs(predictions - data_outputs))
-                        print("Error = {error}".format(error=error))
-
-                        if error != 0:
-                            data = {"subject": "model", "data": GANN_instance}
-                            response = pickle.dumps(data)
-                        else:
-                            data = {"subject": "done", "data": None}
-                            response = pickle.dumps(data)
 
                     except BaseException as e:
                         print("Error Decoding the Client's Data: {msg}.\n".format(msg=e))
@@ -151,6 +100,10 @@ class SocketThread(threading.Thread):
                 print("The received dictionary from the client must have the 'subject' and 'data' keys available. The existing keys are {d_keys}.".format(d_keys=received_data.keys()))
         else:
             print("A dictionary is expected to be received from the client but {d_type} received.".format(d_type=type(received_data)))
+
+
+
+
 
     def run(self):
         print("Running a Thread for the Connection with {client_info}.".format(client_info=self.client_info))

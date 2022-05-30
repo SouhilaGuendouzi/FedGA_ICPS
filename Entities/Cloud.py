@@ -99,26 +99,24 @@ class Cloud(object):
 
               self.weights_global = FedPerGA(initial_population,self.global_model.classification,self.dataset)
 
-        self.global_model.classification.load_state_dict(self.weights_global)
+        if (self.args.aggr=='fedAVG'):
+             self.global_model.load_state_dict(self.weights_global)
+        else :
+
+            self.global_model.classification.load_state_dict(self.weights_global)
 
         return self.global_model
     
     def Launch_local_updates(self,iter):
         self.global_model.train() 
         self.Per_weights=[]
-        self.net=copy.deepcopy(self.global_model.classification.state_dict())
-       
-       
-       # for i in range(10):
-        # try :
-         
-        #  del[self.net['features.{}.weight'.format(i)]]
-        #  del[self.net['features.{}.bias'.format(i)]]
 
-         #except:
-          #   print('')
+        if (self.args.aggr=='fedAVG'):
 
+            self.net=copy.deepcopy(self.global_model.state_dict())
 
+        else:
+            self.net=copy.deepcopy(self.global_model.classification.state_dict())        
       
         for id in range(len(self.clients_list)):
             
