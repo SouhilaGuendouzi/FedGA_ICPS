@@ -57,6 +57,7 @@ if __name__ == '__main__':
     print('Train length',len(mnist_non_iid_train_dls[0]),len(mnist_non_iid_train_dls[1]),len(mnist_non_iid_train_dls[2]),len(mnist_non_iid_train_dls[3]))
     print('Test length',len(mnist_non_iid_test_dls[0]),len(mnist_non_iid_test_dls[1]),len(mnist_non_iid_test_dls[2]),len(mnist_non_iid_test_dls[3]))
 
+
    
 ########################## Prapare Cloud #########################################################################################
  
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 
 
 ########################## Begin process #########################################################################################
-
+"""
     accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
     for iter in range(args.epochs):
         
@@ -107,4 +108,4 @@ if __name__ == '__main__':
 
     Plot_Graphes(args,accuracy_locals_train,accuracy_locals_test,loss_locals_train,loss_locals_test)
 
-  
+  """

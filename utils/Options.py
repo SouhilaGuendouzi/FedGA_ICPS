@@ -7,6 +7,7 @@ import argparse
 def args_parser():
     parser = argparse.ArgumentParser()
     # federated arguments 
+    parser.add_argument('--id', type=int, default=0, help="id of an entity") 
     parser.add_argument('--epochs', type=int, default=10, help="rounds of training") # epochs number is the same as number of layers in FedMA
     parser.add_argument('--num_users', type=int, default=4, help="number of users: K")
     parser.add_argument('--frac', type=float, default=0.1, help="the fraction of clients: C")
