@@ -6,18 +6,18 @@ import pickle
 from matplotlib.style import use
 
 HOST = '127.0.0.1'
-PORT = 1234 # You can use any port between 0 to 65535
+PORT = 12345 # You can use any port between 0 to 65535
 LISTENER_LIMIT = 5
 
 
 # Function to listen for upcoming messages from a client
-class Fog:
+class Cloud:
     def __init__(self,HOST,PORT,LISTENER_LIMIT,args):
         self.HOST=HOST
         self.PORT=PORT
         self.LISTENER_LIMIT=LISTENER_LIMIT
-        self.active_clients = []
-        self.clients=[]
+        self.active_fogs = []
+        self.models=[]
         self.registry={} #§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§#
         self.Actuator=False
         self.globalModel=None
@@ -38,10 +38,10 @@ class Fog:
         except:
            print(f"Unable to bind to host {HOST} and port {PORT}")
         
-    def send_message_to_client(self,client, message):
+    def send_message_to_fog(self,fog, message):
 
           
-          client.send(pickle.dumps(message)) #sendall    message.ffffffffffhhfgode()
+          fog.send(pickle.dumps(message)) #sendall    message.ffffffffffhhfgode()
 
       # Function to send any new message to all the clients that
       # are currently connected to this server
@@ -49,50 +49,50 @@ class Fog:
 
     def send_messages_to_all(self,message):
     
-       for user in self.active_clients:
+       for user in self.active_fogs:
 
-          self.send_message_to_client(user[1], message)
+          self.send_message_to_fog(user[1], message)
 
      # Function to handle client
-    def listen_for_messages(self,client, username):
+    def listen_for_messages(self,fog, username):
 
       while 1:
 
-        message = client.recv(1000000)#.decode('utf-8')
+        message = fog.recv(1000000)#.decode('utf-8')
         message=pickle.loads(message)
         
         if message != '':
             print(username,message)
 
         else:
-            print(f"The message send from client {username} is empty")
+            print(f"The message send from Fog {username} is empty")
 
 
      
     
-    def client_handler(self,client):  
+    def Fog_handler(self,fog):  
     # Server will listen for client message that will
     # Contain the username
       while 1:
 
-        username = client.recv(1000000)#.decode('utf-8')
+        username = fog.recv(1000000)#.decode('utf-8')
         username=pickle.loads(username)
         if username != '':
-            if username.find("Client")!=-1:
-               self.active_clients.append((username, client,None,None))  #username, adr, model, accuracy
+            if username.find("Fog")!=-1:
+               self.active_fogs.append((username, fog,None,None))  #username, adr, model, accuracy
                #prompt_message = "SERVER~" + f"{username} added to the chat"
                print( "SERVER~" + f"{username} added to the chat")
                #self.send_messages_to_all(prompt_message)
                break
         else:
-            print("Client username is empty")
-      print(self.active_clients)
+            print("Fog username is empty")
+      print(self.active_fogs)
       threading.Thread(target=self.listen_for_messages, args=(client, username, )).start()
    
 
     def request_for_models(self):
-      for user in self.active_clients:
-         self.send_message_to_client(user[1], 'Models')
+      for user in self.active_fogs:
+         self.send_message_to_fog(user[1], 'Models')
 
       
 

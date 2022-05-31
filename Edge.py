@@ -3,7 +3,6 @@ import socket
 import threading
 import pickle
 import tkinter as tk
-
 from Entities.Model import *
 from utils.Options import args_parser
 from utils.create_MNIST_datasets import get_FashionMNIST
@@ -80,12 +79,13 @@ class Edge(object):
         if message != '':
            message = pickle.dumps(message)
            print('cest fait')
-           self.client.sendall(message)
+           self.socket.send(message)
       
         else:
            print("Empty message", "Message cannot be empty")
-       except:
-          print("message type")
+       except Exception as e : 
+           print(e)
+          
 
 #*****************************************************************************************#
      def add_message(self,message):
@@ -98,7 +98,8 @@ class Edge(object):
 
        while 1:
 
-        message = socket.recv(1000000).decode('utf-8')
+        message = socket.recv(1000000)#.decode('utf-8')
+        message=pickle.loads(message)
         if message != '':
         
            
