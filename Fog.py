@@ -75,7 +75,7 @@ class Fog:
         message=pickle.loads(message)
         if message != '':
         
-        
+
            
             self.add_message("GLobal model recevied from Server")
             
@@ -172,7 +172,7 @@ class Fog:
       
 
 
-    def receive_fogs(self):
+    def receive_clients(self):
 
  
  
@@ -194,5 +194,5 @@ if __name__ == '__main__':
        # Set server limit
     fog =Fog(args.id,HOST=HOST, PORT=PORT, LISTENER_LIMIT=LISTENER_LIMIT,args=args,HostCloud='127.0.0.1',PortCloud=12345)
     fog.server.listen(LISTENER_LIMIT)
-    threading.Thread(target=fog.receive_fogs, args=()).start()
+    threading.Thread(target=fog.receive_clients, args=()).start()
     fog.root.mainloop()

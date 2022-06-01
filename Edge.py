@@ -383,14 +383,6 @@ if __name__ == '__main__':
    
     edge.main()
 
-
-
-
-
-   #connect()
-   #while 1:
-    # threading.Thread(target=listen_for_messages_from_server, args=(client, )).start()
-     #threading.Thread(target=send_message).start()
           
 
 
