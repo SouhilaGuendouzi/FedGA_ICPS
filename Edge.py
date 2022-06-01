@@ -17,7 +17,7 @@ HOST = '127.0.0.1'
 PORT = 1234
 
 global i
-i=0
+
 root =tk.Tk()
 root.geometry("600x600")
 root.title(" Client Interface ") 
@@ -34,7 +34,6 @@ class Edge(object):
          self.datasetTrain = dataset[0]
          self.datasetTest = dataset[1]
          self.model=model
-        
          self.accuracy=None
          self.loss=None
          self.args=args
@@ -44,27 +43,24 @@ class Edge(object):
               self.model.cuda()
 
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
      def connect(self):
    
        Var= False
        # try except block
        try:
 
-        # Connect to the server
+           # Connect to the server
            self.socket.connect((HOST, PORT))
            print("Successfully connected to server")
+           self.add_message("Successfully connected to Fog server \n")
            self.send_message('Client {}'.format(self.id))
            Var= True
 
        except:
         print("Unable to connect to server", f"Unable to connect to server {HOST} {PORT}")
         
-
-   # username = input('enter your username')
-    #if username != '':
-    #    client.sendall(username.encode())
-    #else:
-    #    print("Invalid username", "Username cannot be empty")
     
        threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
     
@@ -74,11 +70,9 @@ class Edge(object):
 #*****************************************************************************************#
      def send_message(self,message):
        try :
-        #message =input("entrer un message")
-        print(message,'aaaaaaaaa')
+   
         if message != '':
            message = pickle.dumps(message)
-           print('cest fait')
            self.socket.send(message)
       
         else:
@@ -90,7 +84,7 @@ class Edge(object):
 #*****************************************************************************************#
      def add_message(self,message):
        inputtxt.config(state=tk.NORMAL)
-       inputtxt.insert(tk.END, message + '\n')
+       inputtxt.insert(tk.END, message )#+ '\n'
        inputtxt.config(state=tk.DISABLED)
 
 #*****************************************************************************************#
@@ -103,7 +97,7 @@ class Edge(object):
         if message != '':
         
            
-            self.add_message("GLobal model recevied from Server")
+            self.add_message(message)
             
         else:
             print("Error", "Message recevied from Server is empty")
@@ -115,8 +109,6 @@ class Edge(object):
         
         
         
-
- 
 
 #*****************************************************************************************#
      def main(self):
@@ -154,10 +146,8 @@ class Edge(object):
         root.mainloop()
 
 
-
-#*****************************************************************************************#
      def local_update_FedAVG(self):# with its own weights in case of FedAVG, with similar models
-         self.add_message('training')
+         self.add_message('Training')
          
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
@@ -186,11 +176,13 @@ class Edge(object):
             self.loss=sum(batch_loss)/len(batch_loss)
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          
-            
+         self.add_message('. \n')   
+         self.add_message("Testing")
          msg= self.test_img('train')
-         self.add_message('Accuracy Train'+str(msg[1]))
+         self.add_message('Accuracy Train  \t'+str(msg[1])+"\n")
          msg= self.test_img('test')
-         self.add_message('Accuracy Test'+str(msg[1]))
+         self.add_message('Accuracy Test   \t'+str(msg[1])+"\n")
+      
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 #*****************************************************************************************#
      def local_update_Other(self):# with its own weights
@@ -348,8 +340,8 @@ class Edge(object):
         
         for idx, (data, target) in enumerate(self.data): #self.data= 4 (number of batches) self.data.dataset=1919 ==> samples in all batch
         
-    
-           #data, target = data.cuda(), target.cuda() # add this line for GPU 
+           self.add_message('.')   
+           data, target = data.cuda(), target.cuda() # add this line for GPU 
            log_probs =  self.model(data)
            
            # sum up batch loss
@@ -367,8 +359,8 @@ class Edge(object):
         if self.args.verbose:
             
             print('\n Client: {}  {} set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(self.id,datasetName, test_loss, correct, len(self.data.dataset), accuracy))
-            
-           
+       
+        self.add_message('. \n')      
         return accuracy, test_loss
 
 
@@ -377,7 +369,7 @@ if __name__ == '__main__':
     args = args_parser()   # ajoute id 
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    print(torch.cuda.is_available())
+    #print(torch.cuda.is_available())
 
     mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
     n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000

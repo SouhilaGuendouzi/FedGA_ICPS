@@ -4,6 +4,14 @@ import socket
 import threading
 import pickle
 from matplotlib.style import use
+import tkinter as tk
+from utils.Options import args_parser
+import torch
+
+
+
+
+
 
 HOST = '127.0.0.1'
 PORT = 12345 # You can use any port between 0 to 65535
@@ -23,30 +31,50 @@ class Cloud:
         self.globalModel=None
         self.scoring=0
         self.pyhical_attributes={}      
-         # Creating the socket class object
-         # AF_INET: we are going to use IPv4 addresses
-         # SOCK_STREAM: we are using TCP packets for communication
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # IPv4 addresses, TCP
         self.args=args
+        self.root =tk.Tk()
+        self.root.geometry("600x600")
+        self.root.title(" Cloud Interface ") 
+        self.l = tk.Label(text = "Cloud Server")
+        self.l.pack()
+        self.inputtxt = tk.Text(self.root, height = 25,
+                width = 60,
+                bg = "light yellow")
 
-        # Creating a try catch block
+        self.inputtxt.pack()
+        self.inputtxt.configure(state='disabled')
+       
+
+        self.Start_FL = tk.Button(self.root, height = 2,
+                 width = 20,
+                 text ="Start ",
+                 command = lambda:self.start_FL()
+                 )
+        self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
         try:
-        # Provide the server with an address in the form of
-        # host IP and port
           self.server.bind((HOST, PORT))
           print(f"Running the server on {HOST} {PORT}")
-        except:
-           print(f"Unable to bind to host {HOST} and port {PORT}")
+          self.add_message(f"Running the server on {HOST} {PORT}")
+        except Exception as e:
+           print(f"Unable to bind to host {HOST} and port {PORT} because of {e}")
+
         
+    #*****************************************************************************************#
+    def add_message(self,message):
+     
+       self.inputtxt.config(state=tk.NORMAL)
+       self.inputtxt.insert(tk.END, message + '\n')
+       self.inputtxt.config(state=tk.DISABLED)
+
+#*****************************************************************************************#    
     def send_message_to_fog(self,fog, message):
 
           
-          fog.send(pickle.dumps(message)) #sendall    message.ffffffffffhhfgode()
-
-      # Function to send any new message to all the clients that
-      # are currently connected to this server
+          fog.send(pickle.dumps(message)) #sendall    
 
 
+#*****************************************************************************************# 
     def send_messages_to_all(self,message):
     
        for user in self.active_fogs:
@@ -54,6 +82,8 @@ class Cloud:
           self.send_message_to_fog(user[1], message)
 
      # Function to handle client
+
+#*****************************************************************************************# 
     def listen_for_messages(self,fog, username):
 
       while 1:
@@ -69,7 +99,8 @@ class Cloud:
 
 
      
-    
+ 
+#*****************************************************************************************#    
     def Fog_handler(self,fog):  
     # Server will listen for client message that will
     # Contain the username
@@ -90,29 +121,42 @@ class Cloud:
       threading.Thread(target=self.listen_for_messages, args=(client, username, )).start()
    
 
+#*****************************************************************************************# 
     def request_for_models(self):
       for user in self.active_fogs:
          self.send_message_to_fog(user[1], 'Models')
 
       
 
-
+#*****************************************************************************************# 
+    def main(self):
+    
+       
+       
+        self.root.mainloop()
 # Main function
-def main():
 
+    def receive_fogs(self):
 
+    
     # Set server limit
-    fog =Fog(HOST=HOST, PORT=PORT, LISTENER_LIMIT=LISTENER_LIMIT)
-    fog.server.listen(LISTENER_LIMIT)
+    
+       while 1:
 
-    # This while loop will keep listening to client connections
-    while 1:
+        fog, address = cloud.server.accept()
+        print(f"Successfully connected to Fog {address[0]} {address[1]}")
 
-        client, address = fog.server.accept()
-        print(f"Successfully connected to client {address[0]} {address[1]}")
-
-        threading.Thread(target=fog.client_handler, args=(client, )).start()
+        threading.Thread(target=cloud.Fog_handler, args=(fog, )).start()
 
 
 if __name__ == '__main__':
-    main()
+  
+    args = args_parser()   # ajoute id 
+    args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
+    print(torch.cuda.is_available())
+    cloud =Cloud(HOST=HOST, PORT=PORT, LISTENER_LIMIT=LISTENER_LIMIT,args=args)
+
+    cloud.server.listen(LISTENER_LIMIT)
+    threading.Thread(target=cloud.receive_fogs, args=()).start()
+    cloud.main()
+    
