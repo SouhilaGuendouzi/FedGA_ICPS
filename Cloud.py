@@ -5,12 +5,8 @@ import threading
 import pickle
 from matplotlib.style import use
 import tkinter as tk
-from utils.Options import args_parser
+from utils.CloudOptions import args_parser
 import torch
-
-
-
-
 
 
 HOST = '127.0.0.1'
@@ -18,13 +14,16 @@ PORT = 12345 # You can use any port between 0 to 65535
 LISTENER_LIMIT = 5
 
 
+
 # Function to listen for upcoming messages from a client
 class Cloud:
     def __init__(self,HOST,PORT,LISTENER_LIMIT,args):
         self.HOST=HOST
-        self.PORT=PORT
+        self.PORT=args.myport
         self.LISTENER_LIMIT=LISTENER_LIMIT
         self.active_fogs = []
+        self.FLrounds=args.epochs
+        self.aggregation=args.aggr
         self.models=[]
         self.registry={} #§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§#
         self.Actuator=False
@@ -67,23 +66,35 @@ class Cloud:
        self.inputtxt.insert(tk.END, message + '\n')
        self.inputtxt.config(state=tk.DISABLED)
 
-#*****************************************************************************************#    
-    def send_message_to_fog(self,fog, message):
-
-          
-          fog.send(pickle.dumps(message)) #sendall    
+#*****************************************************************************************#   
+    def start_FL(self):
 
 
-#*****************************************************************************************# 
-    def send_messages_to_all(self,message):
+        self.request_for_models()
+
+
+#*****************************************************************************************#
+    def send_message_to_fog(self,fog,message):
+       try :
+   
+        if message != '':
+           message = pickle.dumps(message)
+           fog.send(message)
+      
+        else:
+           print("Empty message", "Message cannot be empty")
+       except Exception as e : 
+           print(e)
+    #*****************************************************************************************#
+  
+   
+
+    def send_messages_to_all(self,message):   #in case of broadcasting
     
        for user in self.active_fogs:
 
           self.send_message_to_fog(user[1], message)
 
-     # Function to handle client
-
-#*****************************************************************************************# 
     def listen_for_messages(self,fog, username):
 
       while 1:
@@ -92,7 +103,9 @@ class Cloud:
         message=pickle.loads(message)
         
         if message != '':
-            print(username,message)
+            print(username," ",message)
+            msg= username+" "+message
+            self.add_message(msg)
 
         else:
             print(f"The message send from Fog {username} is empty")
@@ -100,33 +113,13 @@ class Cloud:
 
      
  
-#*****************************************************************************************#    
-    def Fog_handler(self,fog):  
-    # Server will listen for client message that will
-    # Contain the username
-      while 1:
 
-        username = fog.recv(1000000)#.decode('utf-8')
-        username=pickle.loads(username)
-        if username != '':
-            if username.find("Fog")!=-1:
-               self.active_fogs.append((username, fog,None,None))  #username, adr, model, accuracy
-               #prompt_message = "SERVER~" + f"{username} added to the chat"
-               print( "SERVER~" + f"{username} added to the chat")
-               #self.send_messages_to_all(prompt_message)
-               break
-        else:
-            print("Fog username is empty")
-      print(self.active_fogs)
-      threading.Thread(target=self.listen_for_messages, args=(client, username, )).start()
-   
 
 #*****************************************************************************************# 
     def request_for_models(self):
       for user in self.active_fogs:
          self.send_message_to_fog(user[1], 'Models')
 
-      
 
 #*****************************************************************************************# 
     def main(self):
@@ -138,17 +131,44 @@ class Cloud:
 
     def receive_fogs(self):
 
-    
-    # Set server limit
-    
+       existedFog=False
+       i=0
        while 1:
+        fog, address = self.server.accept()
+        while not existedFog and i< len(self.active_fogs) :
+             if (self.active_fogs[i]['port']==address.port):
+              existedFog=True
+             else :
+              i=i+1
+          
+        if (existedFog==False):
+           print(f"Successfully reconnected to Fog {address[0]} {address[1]}")
+        else :
+          print(f"Successfully connected to Fog {address[0]} {address[1]}")
 
-        fog, address = cloud.server.accept()
-        print(f"Successfully connected to Fog {address[0]} {address[1]}")
 
-        threading.Thread(target=cloud.Fog_handler, args=(fog, )).start()
+        threading.Thread(target=self.Fog_handler, args=(fog,existedFog )).start()
 
-
+#*****************************************************************************************#    
+    def Fog_handler(self,fog,existedFog):  
+  
+    
+      while 1:
+        if (existedFog==False):
+          username = fog.recv(1000000)#.decode('utf-8')
+          username=pickle.loads(username)
+          if username != '':
+            if username.find("Fog")!=-1:
+               self.active_fogs.append((username, fog,None,None))  #username, adr, model, accuracy
+               print( "SERVER~" + f"{username} added to the System")
+               self.add_message(f"{username} added to the System")
+               self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
+               break
+          else:
+            print("Fog username is empty")
+      print(self.active_fogs)
+      threading.Thread(target=self.listen_for_messages, args=(fog, username, )).start()
+   
 if __name__ == '__main__':
   
     args = args_parser()   # ajoute id 

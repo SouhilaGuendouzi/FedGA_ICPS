@@ -1,10 +1,11 @@
 # import required modules
+from queue import Empty
 import socket
 import threading
 import pickle
 import tkinter as tk
 from Entities.Model import *
-from utils.Options import args_parser
+from utils.EdgeOptions import args_parser
 from utils.create_MNIST_datasets import get_FashionMNIST
 import torch.nn.functional as F
 import torch
@@ -14,7 +15,7 @@ from torch.utils.data import DataLoader
 
 
 HOST = '127.0.0.1'
-PORT = 1234
+PORT = 12346
 
 global i
 
@@ -29,7 +30,7 @@ root.title(" Client Interface ")
 
 
 class Edge(object):
-     def __init__(self, id,model, dataset, args):#,device
+     def __init__(self, id,model, dataset, args,portFog):#,device
          self.id=id
          self.datasetTrain = dataset[0]
          self.datasetTest = dataset[1]
@@ -37,6 +38,7 @@ class Edge(object):
          self.accuracy=None
          self.loss=None
          self.args=args
+         self.portForg=portFog
          self.socket= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          #self.inputtxt=None
          if torch.cuda.is_available():
@@ -52,14 +54,14 @@ class Edge(object):
        try:
 
            # Connect to the server
-           self.socket.connect((HOST, PORT))
+           self.socket.connect((HOST, self.portForg))
            print("Successfully connected to server")
            self.add_message("Successfully connected to Fog server \n")
            self.send_message('Client {}'.format(self.id))
            Var= True
 
        except:
-        print("Unable to connect to server", f"Unable to connect to server {HOST} {PORT}")
+        print("Unable to connect to server", f"Unable to connect to server {HOST} {self.portForg}")
         
     
        threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
@@ -70,8 +72,19 @@ class Edge(object):
 #*****************************************************************************************#
      def send_message(self,message):
        try :
-   
         if message != '':
+           try:
+             if isinstance(message, dict):
+               objectToSend=Empty()
+               objectToSend.id=self.id
+               objectToSend.subject="LocalModel"
+               objectToSend.data=message
+               objectToSend.accuracy=self.accuracy
+               message =  objectToSend
+
+               print(message.subject)
+           except Exception as e:
+                 print(e)
            message = pickle.dumps(message)
            self.socket.send(message)
       
@@ -91,14 +104,10 @@ class Edge(object):
      def listen_for_messages_from_server(self,socket):
 
        while 1:
-
         message = socket.recv(1000000)#.decode('utf-8')
         message=pickle.loads(message)
         if message != '':
-        
-           
             self.add_message(message)
-            
         else:
             print("Error", "Message recevied from Server is empty")
 #*****************************************************************************************#
@@ -378,7 +387,7 @@ if __name__ == '__main__':
     datasetTest=mnist_non_iid_test_dls[args.id]      #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch
     dataset =[datasetTrain,datasetTest]
     model =Model_Fashion()
-    edge =Edge(id=args.id,model=model,dataset=dataset,args=args)
+    edge =Edge(id=args.id,model=model,dataset=dataset,args=args,portFog=args.portFog)
    
    
     edge.main()
