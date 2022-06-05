@@ -1,5 +1,6 @@
 # Import required modules
 
+from queue import Empty
 import socket
 import threading
 import pickle
@@ -47,10 +48,10 @@ class Cloud:
 
         self.Start_FL = tk.Button(self.root, height = 2,
                  width = 20,
-                 text ="Start ",
+                 text ="Start FedGA-ICPS",
                  command = lambda:self.start_FL()
                  )
-        self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
+        self.Start_FL.pack(padx=200, pady=10, side=tk.LEFT)
         try:
           self.server.bind((HOST, PORT))
           print(f"Running the server on {HOST} {PORT}")
@@ -131,43 +132,37 @@ class Cloud:
 
     def receive_fogs(self):
 
-       existedFog=False
-       i=0
+      
        while 1:
         fog, address = self.server.accept()
-        while not existedFog and i< len(self.active_fogs) :
-             if (self.active_fogs[i]['port']==address.port):
-              existedFog=True
-             else :
-              i=i+1
-          
-        if (existedFog==False):
-           print(f"Successfully reconnected to Fog {address[0]} {address[1]}")
-        else :
-          print(f"Successfully connected to Fog {address[0]} {address[1]}")
-
-
-        threading.Thread(target=self.Fog_handler, args=(fog,existedFog )).start()
+      
+        threading.Thread(target=self.Fog_handler, args=(fog, )).start()
 
 #*****************************************************************************************#    
-    def Fog_handler(self,fog,existedFog):  
+    def Fog_handler(self,fog):  
   
-    
+      existedFog=False
+      i=0
       while 1:
-        if (existedFog==False):
-          username = fog.recv(1000000)#.decode('utf-8')
-          username=pickle.loads(username)
-          if username != '':
-            if username.find("Fog")!=-1:
-               self.active_fogs.append((username, fog,None,None))  #username, adr, model, accuracy
-               print( "SERVER~" + f"{username} added to the System")
-               self.add_message(f"{username} added to the System")
+          id = fog.recv(1000000)#.decode('utf-8')
+          id=pickle.loads(id)
+          if str(id) != '':
+            while (i<len(self.active_fogs) and existedFog==False):
+               if (self.active_fogs[i][0]==id): existedFog=True
+               else: i=i+1
+            if (existedFog==False):
+               self.active_fogs.append((id, fog,Empty()))  #username, adr, list_of_models
+               print( "" + f" Fog {id} added to the System")
+               self.add_message(f"Fog {id} added to the System")
                self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
                break
+            else:
+               print( "" + f" Fog {id} reconnected to the System")
+               self.add_message(f"Fog {id}  reconnected to the System")
           else:
             print("Fog username is empty")
-      print(self.active_fogs)
-      threading.Thread(target=self.listen_for_messages, args=(fog, username, )).start()
+     
+          threading.Thread(target=self.listen_for_messages, args=(fog, id, )).start()
    
 if __name__ == '__main__':
   

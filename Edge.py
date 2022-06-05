@@ -30,16 +30,21 @@ root.title(" Client Interface ")
 
 
 class Edge(object):
-     def __init__(self, id,model, dataset, args,portFog):#,device
-         self.id=id
+     def __init__(self,model, dataset, args):#,device
+         self.args=args
+         self.id=args.id
          self.datasetTrain = dataset[0]
          self.datasetTest = dataset[1]
          self.model=model
-         self.accuracy=None
+         self.GlobalModelWeghts=copy.deepcopy(model.state_dict())
+         self.weightsJustforReturn=copy.deepcopy(model.state_dict())
+         self.accuracy=[None,None]
          self.loss=None
-         self.args=args
-         self.portForg=portFog
+         self.domain=args.domain
+         self.task=args.task
+         self.portFog=args.portFog
          self.socket= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          
          #self.inputtxt=None
          if torch.cuda.is_available():
               self.model.cuda()
@@ -54,14 +59,14 @@ class Edge(object):
        try:
 
            # Connect to the server
-           self.socket.connect((HOST, self.portForg))
+           self.socket.connect((HOST, self.portFog))
            print("Successfully connected to server")
            self.add_message("Successfully connected to Fog server \n")
-           self.send_message('Client {}'.format(self.id))
+           self.send_message(self.id,'Connection')
            Var= True
 
        except:
-        print("Unable to connect to server", f"Unable to connect to server {HOST} {self.portForg}")
+        print("Unable to connect to server", f"Unable to connect to server {HOST} {self.portFog}")
         
     
        threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
@@ -70,19 +75,22 @@ class Edge(object):
 
 
 #*****************************************************************************************#
-     def send_message(self,message):
+     def send_message(self,message,subject):
        try :
         if message != '':
            try:
-             if isinstance(message, dict):
+             if isinstance(message, dict):  #on a fait dict pour le cas des vecteurs de poids
                objectToSend=Empty()
                objectToSend.id=self.id
-               objectToSend.subject="LocalModel"
+               objectToSend.subject=subject
+               objectToSend.completeModel=copy.deepcopy(self.model.state_dict())
                objectToSend.data=message
                objectToSend.accuracy=self.accuracy
-               message =  objectToSend
-
-               print(message.subject)
+               objectToSend.domain=self.domain
+               objectToSend.task=self.task
+               message = objectToSend
+            
+               
            except Exception as e:
                  print(e)
            message = pickle.dumps(message)
@@ -107,14 +115,47 @@ class Edge(object):
         message = socket.recv(1000000)#.decode('utf-8')
         message=pickle.loads(message)
         if message != '':
-            self.add_message(message)
+           
+            try:
+              if isinstance(message, dict):
+                  if (message.subject=='RequestModelsFirst'):
+                     self.add_message('Fog server is requesting for starting FL \n')
+                     threading.Thread(target=self.Training, args=(True,)).start() #it returns the whole model
+
+                  elif  (message.subject=='RequestModels'):
+                             threading.Thread(target=self.Updating, args=(message.data,True,)).start() 
+                  elif  (message.subject=='FinalFL'):
+                             threading.Thread(target=self.Updating, args=(message.data,False,)).start() 
+                  else:
+
+                      print('It is for TL model')
+                  self.add_message('Fog Server is requesting For: ',message.subject+"\n")
+
+
+                     
+            except Exception as e: 
+                print('Error from listen_for_messages_from_server', e)
+            self.add_message(message+"\n")
         else:
             print("Error", "Message recevied from Server is empty")
 #*****************************************************************************************#
-     def Training(self):
-   
-         
-         threading.Thread(target=self.local_update_FedAVG, args=()).start()
+     def Training(self,Request):
+         if (Request==True):
+             self.add_message('Starting FedGA-ICPS \n')
+             if (self.args.aggr=='FedAVG'):
+                threading.Thread(target=self.local_train_FedAVG, args=(Request,)).start() #it returns the whole model
+             else :
+                threading.Thread(target=self.local_train_Other, args=(Request,)).start() #it returns the whole model
+         else :
+              threading.Thread(target=self.local_train_FedAVG, args=(Request,)).start() #it returns the whole model
+
+
+     def Updating(self,data,Request):
+
+         if (self.args.aggr=='FedAVG'):
+              threading.Thread(target=self.local_update_FedAVG, args=(data,Request,)).start() #it returns the whole model
+         else: 
+              threading.Thread(target=self.local_update_Other, args=(data,Request,)).start() #it returns the whole model
         
         
         
@@ -133,31 +174,29 @@ class Edge(object):
         Connect =tk.Button(root, height = 2,
                  width = 20,
                  text ="Connect",
-                 #command=self.connect
                  command=self.connect
                  )
 
-        Connect.pack(padx=100, pady=10, side=tk.LEFT)
+        Connect.pack(padx=50, pady=10, side=tk.LEFT)
 
 
         Train = tk.Button(root, height = 2,
                  width = 20,
                  text ="Train",
-                 command = lambda:self.Training()
+                 command = lambda:self.Training(False)
                  )
-        Train.pack(padx=5, pady=20, side=tk.LEFT)
+        Train.pack( padx=50,pady=20, side=tk.LEFT)
         Upload = tk.Button(root, height = 2,
                  width = 20,
                  text ="Upload",
-                 command = lambda:self.send_message(self.model.state_dict())
+                 command = lambda:self.send_message(self.model.state_dict(),'LocalModel')
                  )
         Upload.pack(padx=5, pady=20, side=tk.LEFT)
         root.mainloop()
 
 
-     def local_update_FedAVG(self):# with its own weights in case of FedAVG, with similar models
+     def local_train_FedAVG(self,Request):# with its own weights in case of FedAVG, with similar models
          self.add_message('Training')
-         
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.data = self.datasetTrain
@@ -191,11 +230,13 @@ class Edge(object):
          self.add_message('Accuracy Train  \t'+str(msg[1])+"\n")
          msg= self.test_img('test')
          self.add_message('Accuracy Test   \t'+str(msg[1])+"\n")
-      
+         self.weightsJustforReturn=self.weights
+         if (Request==True):
+             self.send_message(self.weightsJustforReturn,'LocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 #*****************************************************************************************#
-     def local_update_Other(self):# with its own weights
-        
+     def local_train_Other(self,Request):# with its own weights
+         self.add_message('Training')
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.data = self.datasetTrain
@@ -204,7 +245,7 @@ class Edge(object):
          epoch_loss = []
     
          for iter in range(self.args.local_ep):
-           
+            self.add_message('.')
             batch_loss = []
 
             for batch_idx, (images, labels) in enumerate(self.data):
@@ -229,14 +270,22 @@ class Edge(object):
       
            del[self.weights['features.{}.bias'.format(i)]]
 
-          except:
-             print('')
-            
+          except Exception as e:
+             print(e)
+         self.add_message('. \n')   
+         self.add_message("Testing")
+         msg= self.test_img('train')
+         self.add_message('Accuracy Train  \t'+str(msg[1])+"\n")
+         msg= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(msg[1])+"\n")   
          # Here ==> self.weights contains only classification layers (fully connected layers)
+         self.weightsJustforReturn=self.weights
+         if (Request==True):
+             self.send_message(self.weightsJustforReturn,'LocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 #*****************************************************************************************#
-     def local_update(self,weights_global):   #with the global layers weights in case of FedAVG, with similar models
+     def local_update_FedAVG(self,weights_global,Request):   #with the global layers weights in case of FedAVG, with similar models
  
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
@@ -273,24 +322,22 @@ class Edge(object):
                 epoch_loss.append(self.loss)
                 self.model.load_state_dict(self.previous_weights)
            
-        
+         self.weightsJustforReturn=self.weights
+         if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
          return  self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
  #*****************************************************************************************#       
-     def local_updatePer(self,weights_global): #with the global personnalized layers weights in case of FedPer, FedGa ..
+     def local_update_Other(self,weights_global,Request): #with the global personnalized layers weights in case of FedPer, FedGa ..
          
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers
          self.previous_weights=self.model.state_dict()
-    
          self.weights.update(self.w)
          self.data = self.datasetTrain
          self.model.load_state_dict(self.weights)
          self.model.train()
-
-        
          optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, momentum=self.args.momentum)
          epoch_loss = []
 
@@ -326,7 +373,8 @@ class Edge(object):
           except:
              print('')
          
-     
+         self.weightsJustforReturn=self.weights
+         if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 #*****************************************************************************************#
@@ -369,25 +417,47 @@ class Edge(object):
             
             print('\n Client: {}  {} set: Average loss: {:.4f} \nAccuracy: {}/{} ({:.2f}%)\n'.format(self.id,datasetName, test_loss, correct, len(self.data.dataset), accuracy))
        
-        self.add_message('. \n')      
+        self.add_message('. \n')   
+        if (datasetName=='test'):
+           self.accuracy[0]=accuracy
+        elif (datasetName=='train'):
+            self.accuracy[1]=accuracy   
         return accuracy, test_loss
 
 
 #*****************************************************************************************#
 if __name__ == '__main__':
-    args = args_parser()   # ajoute id 
+    args = args_parser()   
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     #print(torch.cuda.is_available())
-
-    mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
-    n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
-    batch_size =50, shuffle =True)     
-    datasetTrain= mnist_non_iid_train_dls[args.id]  
-    datasetTest=mnist_non_iid_test_dls[args.id]      #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch
-    dataset =[datasetTrain,datasetTest]
-    model =Model_Fashion()
-    edge =Edge(id=args.id,model=model,dataset=dataset,args=args,portFog=args.portFog)
+    list_users=range(4)
+    if (args.id in list_users): 
+      mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
+      n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
+      batch_size =50, shuffle =True)     
+      datasetTrain= mnist_non_iid_train_dls[args.id]  
+      datasetTest=mnist_non_iid_test_dls[args.id]      #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch
+      dataset =[datasetTrain,datasetTest]
+    else :
+      mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
+      n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
+      batch_size =50, shuffle =True)     
+      datasetTrain= mnist_non_iid_train_dls[2]  
+      datasetTest=mnist_non_iid_test_dls[2]      #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch
+      dataset =[datasetTrain,datasetTest]
+    print(args.model)
+    if (args.model=='default'):
+        model =Model_Fashion()
+    elif (args.model=='A'):
+        model= Model_A()
+    elif (args.model=='B'):
+        model= Model_B()
+    elif (args.model=='C'):
+        model= Model_C()
+    elif (args.model=='D'):
+        model= Model_D()
+    edge =Edge(model=model,dataset=dataset,args=args)
    
    
     edge.main()

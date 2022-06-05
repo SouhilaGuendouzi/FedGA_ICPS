@@ -1,5 +1,6 @@
 # Import required modules
 
+from queue import Empty
 import socket
 import threading
 import pickle
@@ -8,23 +9,17 @@ import tkinter as tk
 from utils.FogOptions import args_parser
 import torch
 
-HOST = '127.0.0.1'
-PORT = 12346 # You can use any port between 0 to 65535
-LISTENER_LIMIT = 5
-
-
 
 # Function to listen for upcoming messages from a client
 class Fog:
-    def __init__(self,id,HOST,PORT,LISTENER_LIMIT,args,HostCloud,PortCloud):
-        self.id=id
+    def __init__(self,args,HOST,HostCloud):
+        self.id=args.id
         self.HOST=HOST
-        self.PORT=PORT
-        self.LISTENER_LIMIT=LISTENER_LIMIT
+        self.PORT=args.myport
+        self.LISTENER_LIMIT=args.LISTENER_LIMIT
         self.HostCloud=HostCloud
-        self.PortCloud=PortCloud
+        self.PortCloud=args.portCloud
         self.active_clients = []
-        self.clients=[]  ###" pour le momennt fihoum weights"
         self.registry={} #§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§#
         self.Actuator=False
         self.globalModel=None
@@ -61,12 +56,13 @@ class Fog:
         self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
     
         try:
-          self.server.bind((HOST, PORT))
-          print(f"Running the server on {HOST} {PORT}")
-          self.add_message(f"Running the server on {HOST} {PORT} \n")
+          self.server.bind((self.HOST, self.PORT))
+          print(f"Running the server on {self.HOST} {self.PORT}")
+          self.server.listen(self.LISTENER_LIMIT)
+          self.add_message(f"Running the server on {self.HOST} {self.PORT} \n")
         except:
-           print(f"Unable to bind to host {HOST} and port {self.PortCloud}")
-           self.add_message(f"Unable to bind to host {HOST} and port {self.PortCloud}")
+           print(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
+           self.add_message(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
     #*****************************************************************************************#
     def listen_for_messages_from_server(self,socket):
 
@@ -86,11 +82,9 @@ class Fog:
        # try except block
        try:
 
-        # Connect to the server
+    
            self.cloud.connect((self.HostCloud, self.PortCloud))
-           #print("Successfully connected to Cloud")
-           #self.add_message("Successfully connected to Cloud")
-           self.send_message_to_cloud('Fog {}'.format(self.id))
+           self.send_message_to_cloud(self.id)
            Var= True
 
        except Exception as e:
@@ -120,14 +114,8 @@ class Fog:
        self.inputtxt.insert(tk.END, message )
        self.inputtxt.config(state=tk.DISABLED)
 #*****************************************************************************************#    
-    def send_message_to_client(self,client, message):
-
-          
+    def send_message_to_client(self,client, message): 
           client.send(pickle.dumps(message)) #sendall    message.ffffffffffhhfgode()
-
-      # Function to send any new message to all the clients that
-      # are currently connected to this server
-
 
     def send_messages_to_all(self,message):
     
@@ -135,28 +123,39 @@ class Fog:
 
           self.send_message_to_client(user[1], message)
 
-     # Function to handle client
-    def listen_for_messages(self,client, username):
+ 
+
+    def listen_for_messages(self,client, id):
 
       while 1:
+
 
         message = client.recv(1000000)#.decode('utf-8')
         message=pickle.loads(message)
         i=0
+        Find=False
         
         if message != '':
             #msg=username+"  "+message
-            self.add_message(username+' weights are received \n')
-            self.add_message(message=message.subject)
-            print(username,message.subject)
-            while (i<len(self.active_clients)):
-              username="Client "+str(message.id)
-              if (self.active_clients[i][0].find(username)): ### search about user 
+            self.add_message(' Message received From Client'+ str(id)+' About '+message.subject  + ' \n')
+           
+            while (i<len(self.active_clients) and Find==False):
+              username="Client "+str(id)
+              if (self.active_clients[i][0]==id): ### search about user 
+                
                 try:
-                 self.active_clients[i][2].data= message.data ### update model parameters
-                except:
-                  self.active_clients[i][2]=message
-            self.send_message_to_client(client,"FOG  ~~ Successful Weights received ")
+                 Find=True
+        
+        
+                 self.active_clients[i][3][0]=message.data ### update model parameters
+                 self.active_clients[i][3][1]=message.completeModel
+                 self.active_clients[i][3][2]=message.accuracy
+                 self.active_clients[i][3][3]=message.domain
+                 self.active_clients[i][3][4]=message.task
+                except Exception as e:
+                  print('Exception from listen_for_messages',e)
+              i=i+1
+            self.send_message_to_client(client,"FOG  ~~ Successful Demand Received ")
             print(self.active_clients)
 
         else:
@@ -165,31 +164,38 @@ class Fog:
 
      
     
-    def client_handler(self,client,address,existedClient):  
+    def client_handler(self,client,address):  
     # Server will listen for client message that will
     # Contain the username
+     
       while 1:
-        if (existedClient==False):
-          username = client.recv(1000000)#.decode('utf-8')
-          username=pickle.loads(username)
-          if username != '':
-            if username.find("Client")!=-1:
-               self.active_clients.append((username, address,None))  #username, adr, data object
-               #prompt_message = "SERVER~" + f"{username} added to the chat"
-               print( "SERVER~" + f"{username} added to the System")
-               self.add_message(f"{username} added to the System \n")
-               #self.send_messages_to_all(prompt_message)
-               break
+          ExistedClient=False
+          i=0
+          id = client.recv(1000000)#.decode('utf-8')
+          id=pickle.loads(id)
+          print(id)
+          if str(id) != '':
+               while(i<len(self.active_clients) and  ExistedClient==False ):
+                 if (self.active_clients[i][0]==id): ExistedClient=True
+                 else : i=i+1
+               if (ExistedClient==False):
+                 self.active_clients.append((id, client,address,[None,None,None,None,None]))  #username, adr, data object
+                
+                 print( "SERVER~" + f"Client {id} added to the System")
+                 self.add_message(f"Client {id} added to the System \n")
+                 
+                 
+               else :
+                 
+                 print( "SERVER~" + f"Client {id} is reconnected to the System")
+                 self.add_message(f"Client {id} reconnected to the System \n")
+               
+
           else:
             print("Client username is empty")
-        else:
-
-           self.add_message(f"{username} reconnected to the System \n")
-
-        
-   
-
-      threading.Thread(target=self.listen_for_messages, args=(client, username, )).start()
+      
+  
+          threading.Thread(target=self.listen_for_messages, args=(client, id, )).start()
    
 
     def request_for_models(self):
@@ -200,32 +206,19 @@ class Fog:
 
     def receive_clients(self):
     # This while loop will keep listening to client connections
-       existedClient=False
-       i=0
-       while 1:
-            
+       
+      while 1:      
         client, address = self.server.accept()
-        while  (existedClient==False) and i< len(self.active_clients) :
-            
-            if (self.active_clients[i][1][1]==address[1]):
-              existedClient=True
-            else :
-              i=i+1
-        if (existedClient==True):
-           print(f"Successfully reconnected to client {address[0]} {address[1]}")
-        else :
-          print(f"Successfully connected to client {address[0]} {address[1]}")
-
-        threading.Thread(target=self.client_handler, args=(client,address,existedClient )).start()
+        threading.Thread(target=self.client_handler, args=(client,address)).start()
 
 
 if __name__ == '__main__':
+
     args = args_parser()   # ajoute id 
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     print(torch.cuda.is_available())
        # Set server limit
-    fog =Fog(args.id,HOST=HOST, PORT=args.myport, LISTENER_LIMIT=LISTENER_LIMIT,args=args,HostCloud='127.0.0.1',PortCloud=args.portCloud)
-    fog.server.listen(LISTENER_LIMIT)
+    fog =Fog(args=args,HOST='127.0.0.1',HostCloud='127.0.0.1')
     threading.Thread(target=fog.receive_clients, args=()).start()
     fog.root.mainloop()
