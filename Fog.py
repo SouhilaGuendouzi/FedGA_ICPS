@@ -20,8 +20,8 @@ class Fog:
         self.HostCloud=HostCloud
         self.PortCloud=args.portCloud
         self.active_clients = []
-        self.registry={} #§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§#
-        self.Actuator=False
+        self.receivedLocalModels=0
+        self.Actuator="Free"
         self.globalModel=None
         self.scoring=0
         self.pyhical_attributes={}      
@@ -51,7 +51,7 @@ class Fog:
         self.Start_FL = tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Start ",
-                 command = lambda:self.send_message_to_cloud(len(self.active_clients))
+                 command = lambda:self.send_message_to_cloud(len(self.active_clients),"Test")
                  )
         self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
     
@@ -63,20 +63,13 @@ class Fog:
         except:
            print(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
            self.add_message(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
-    #*****************************************************************************************#
-    def listen_for_messages_from_server(self,socket):
+    
+    
+    
+    
+    #***********Cloud Setup*****************************************#
 
-       while 1:
 
-        message = socket.recv(1000000)#.decode('utf-8')
-        message=pickle.loads(message)
-        if message != '':
-  
-            self.add_message(message)
-            
-        else:
-            print("Error", "Message recevied from Server is empty")
-#*****************************************************************************************#
     def connect(self):
        Var= False
        # try except block
@@ -84,48 +77,153 @@ class Fog:
 
     
            self.cloud.connect((self.HostCloud, self.PortCloud))
-           self.send_message_to_cloud(self.id)
+           self.send_message_to_cloud(self.id,'Connection')
            Var= True
 
        except Exception as e:
         print(e)
         
     
-       threading.Thread(target=self.listen_for_messages_from_server, args=(self.cloud, )).start()
+       threading.Thread(target=self.listen_for_messages_from_Cloud, args=(self.cloud, )).start()
     
        return Var
-       
+   
+    #*****************************************************************************************#    
+    def listen_for_messages_from_Cloud(self,socket):
+
+       while 1:
+         
+        message = socket.recv(1000000)#.decode('utf-8')
+        message=pickle.loads(message)
+        if message != '':
+           try:
+              if isinstance(message, dict):
+                  self.add_message('Cloud Server is requesting For: ',message.subject+"\n")
+                  if (message.subject=='FLStart'):
+                     self.receivedLocalModels=0
+                     self.Actuator="FL"
+                     self.send_messages_to_all(None, "FLStart")
+
+                  elif  (message.subject=='FL'):
+                      self.receivedLocalModels=0
+                      self.add_message('Cloud server is requesting for an Other  FL Round \n')
+                      self.send_messages_to_all(None, "FL")
+                  elif  (message.subject=='FLEnd'):
+                      self.Actuator="Free"
+                      self.add_message('Cloud server Compeleted  the Last FL Round \n')
+                      self.send_messages_to_all(None, "FLEnd")
+
+                  elif  (message.subject=='TLModel'):
+                      self.TransferModelToClient(message)
+
+                  elif  (message.subject=='RequestTLModel'):
+                      self.TransferModelToCloud(message)
+                  else :
+                       self.add_message(message+"\n")
+
+              else :
+                  print('waw')
+           except Exception as e: 
+                print('Error from listen_for_messages_from_server', e)       
+        else:
+            print("Error", "Message recevied from Server is empty")
+
 #*****************************************************************************************#
-    def send_message_to_cloud(self,message):
+    def send_message_to_cloud(self,message,subject):
+
+
        try :
    
         if message != '':
-           message = pickle.dumps(message)
+           obj =Empty()
+           obj.data=message
+           obj.subject=subject
+           message=obj
            self.cloud.send(message)
       
         else:
            print("Empty message", "Message cannot be empty")
        except Exception as e : 
            print(e)
-    #*****************************************************************************************#
+
+
+
+
+    # *************************************************************************#
+    def TransferModelToCloud(self,message):
+      id_user=message.data[0]  #id
+      for usr in self.active_clients:
+        if (usr[0]==id_user): 
+          self.send_message_to_client(usr[1], message.data[2], "TLModel")
+    #**********************************************************************#    
+
+
+
     def add_message(self,message):
      
        self.inputtxt.config(state=tk.NORMAL)
        self.inputtxt.insert(tk.END, message )
        self.inputtxt.config(state=tk.DISABLED)
-#*****************************************************************************************#    
-    def send_message_to_client(self,client, message): 
+
+
+    #***********Edge Setup*****************************************#
+   
+    def client_handler(self,client,address):  
+      while 1:
+          ExistedClient=False
+          i=0
+          id = client.recv(1000000)#.decode('utf-8')
+          id=pickle.loads(id)
+          print(id)
+          if str(id) != '':
+               while(i<len(self.active_clients) and  ExistedClient==False ):
+                 if (self.active_clients[i][0]==id): ExistedClient=True
+                 else : i=i+1
+               if (ExistedClient==False):
+                 self.active_clients.append((id, client,address,[None,None,None,None,None]))  #username, adr, data object     
+                 print( "SERVER~" + f"Client {id} added to the System")
+                 self.add_message(f"Client {id} added to the System \n")
+                 
+                 
+               else :
+                 self.active_clients[i][1]=client
+                 self.active_clients[i][2]=address
+                 print( "SERVER~" + f"Client {id} is reconnected to the System")
+                 self.add_message(f"Client {id} reconnected to the System \n")
+               
+
+          else:
+            print("Client username is empty")
+      
+  
+          threading.Thread(target=self.listen_for_messages_from_Client, args=(client, id, )).start()
+   
+
+    
+    def receive_clients(self):
+
+      while 1:      
+        client, address = self.server.accept()
+        threading.Thread(target=self.client_handler, args=(client,address)).start()
+
+    def send_message_to_client(self,client, message,subject): 
+          
+          obj =Empty()
+          obj.data=message
+          obj.subject=subject
+          message=obj
+          
           client.send(pickle.dumps(message)) #sendall    message.ffffffffffhhfgode()
 
-    def send_messages_to_all(self,message):
+    def send_messages_to_all(self,message,subject):
     
        for user in self.active_clients:
 
-          self.send_message_to_client(user[1], message)
+          self.send_message_to_client(user[1], message,subject)
 
  
 
-    def listen_for_messages(self,client, id):
+    def listen_for_messages_from_Client(self,client, id):
 
       while 1:
 
@@ -144,72 +242,54 @@ class Fog:
               if (self.active_clients[i][0]==id): ### search about user 
                 
                 try:
+                 
                  Find=True
-        
-        
-                 self.active_clients[i][3][0]=message.data ### update model parameters
-                 self.active_clients[i][3][1]=message.completeModel
-                 self.active_clients[i][3][2]=message.accuracy
-                 self.active_clients[i][3][3]=message.domain
-                 self.active_clients[i][3][4]=message.task
+                 if (message.subject=="LocalModel"):
+                   self.receivedLocalModels+=1
+                   self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
+                   self.active_clients[i][3][1]=message.completeModel
+                   self.active_clients[i][3][2]=message.accuracy
+                   self.active_clients[i][3][3]=message.domain
+                   self.active_clients[i][3][4]=message.task
+                   if (self.receivedLocalModels==len(self.active_clients) and self.Actuator=="FL"): 
+                     self.sendLocalModels()
+                 elif (message.subject=="RequestTLModel"):
+               
+                   msg=[self.active_clients[i][0],self.active_clients[i][3][3],self.active_clients[i][3][4]]
+                   self.send_message_to_cloud(msg,"RequestTLModel" )
                 except Exception as e:
                   print('Exception from listen_for_messages',e)
               i=i+1
-            self.send_message_to_client(client,"FOG  ~~ Successful Demand Received ")
+            self.send_message_to_client(client,"FOG  ~~ Successful Demand Received ","ACK")
             print(self.active_clients)
 
         else:
             print(f"The message send from client {username} is empty")
 
 
-     
-    
-    def client_handler(self,client,address):  
-    # Server will listen for client message that will
-    # Contain the username
-     
-      while 1:
-          ExistedClient=False
-          i=0
-          id = client.recv(1000000)#.decode('utf-8')
-          id=pickle.loads(id)
-          print(id)
-          if str(id) != '':
-               while(i<len(self.active_clients) and  ExistedClient==False ):
-                 if (self.active_clients[i][0]==id): ExistedClient=True
-                 else : i=i+1
-               if (ExistedClient==False):
-                 self.active_clients.append((id, client,address,[None,None,None,None,None]))  #username, adr, data object
-                
-                 print( "SERVER~" + f"Client {id} added to the System")
-                 self.add_message(f"Client {id} added to the System \n")
-                 
-                 
-               else :
-                 
-                 print( "SERVER~" + f"Client {id} is reconnected to the System")
-                 self.add_message(f"Client {id} reconnected to the System \n")
-               
+    #**********************************************************************#
 
-          else:
-            print("Client username is empty")
-      
-  
-          threading.Thread(target=self.listen_for_messages, args=(client, id, )).start()
+
+    def sendLocalModels(self):
+      list= [None for i in len(self.active_clients)]
+      for usr in self.active_clients:
+        list.append((usr[0],usr[2],usr[3][2],usr[3][1],usr[3][3],usr[3][4])) #id, address, accuracy, Personnalized Model, domain, task
+
+      self.send_message_to_cloud(list,"LocalModels")
+
+
+
+    #**********************************************************************#
+    def TransferModelToClient(self,message):
+      model=None
+      for usr in self.active_clients:
+        if (usr[0]==id_user): 
+          model =usr[3][1]  #complete model of the user
+     
+      self.send_message_to_cloud(model, "TLModel")
+    #**********************************************************************#
+
    
-
-    def request_for_models(self):
-      for user in self.active_clients:
-         self.send_message_to_client(user[1], 'Models')
-
-      
-
-    def receive_clients(self):
-    # This while loop will keep listening to client connections
-       
-      while 1:      
-        client, address = self.server.accept()
-        threading.Thread(target=self.client_handler, args=(client,address)).start()
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ class Cloud(object):
         self.weights_previous=self.global_model.state_dict() # we need it for FedPer
         self.dataset=dataset      #used for fedGA
         self.args=args
-        self.method_name='fedAVG' #by default
+        self.method_name=args.aggr 
         self.loss_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
         self.accuracy_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
         self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]

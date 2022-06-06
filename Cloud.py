@@ -25,10 +25,11 @@ class Cloud:
         self.active_fogs = []
         self.FLrounds=args.epochs
         self.aggregation=args.aggr
-        self.models=[]
+        self.localmodels=[None for i in self.args.num_users]
         self.registry={} #§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§#
         self.Actuator=False
         self.globalModel=None
+        self.numberFogsreceivedForFL=0
         self.scoring=0
         self.pyhical_attributes={}      
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # IPv4 addresses, TCP
@@ -64,14 +65,10 @@ class Cloud:
     def add_message(self,message):
      
        self.inputtxt.config(state=tk.NORMAL)
-       self.inputtxt.insert(tk.END, message + '\n')
+       self.inputtxt.insert(tk.END, message )
        self.inputtxt.config(state=tk.DISABLED)
 
-#*****************************************************************************************#   
-    def start_FL(self):
 
-
-        self.request_for_models()
 
 
 #*****************************************************************************************#
@@ -90,45 +87,56 @@ class Cloud:
   
    
 
-    def send_messages_to_all(self,message):   #in case of broadcasting
+    def send_messages_to_all(self,message,subject):   #in case of broadcasting
     
        for user in self.active_fogs:
 
-          self.send_message_to_fog(user[1], message)
+          self.send_message_to_fog(user[1], message,subject)
 
     def listen_for_messages(self,fog, username):
 
       while 1:
-
+        
         message = fog.recv(1000000)#.decode('utf-8')
+        
         message=pickle.loads(message)
+        i=0
+        Find=False
         
         if message != '':
-            print(username," ",message)
-            msg= username+" "+message
-            self.add_message(msg)
+          self.add_message(' Message received From Fog'+ str(id)+' About '+message.subject  + ' \n')
+
+          while (i<len(self.active_fogs) and Find==False):
+              username="Fog "+str(id)
+              if (self.active_fogs[i][0]==id): ### search about Fog
+                
+                try:
+                 Find=True
+
+                 if (message.subject=="LocalModels"):
+                   self.active_fogs[i][3]=message.data
+                   
+                  
+                
+              
+               
+                except Exception as e:
+                  print('Exception from listen_for_messages',e)
+              i=i+1
+          self.send_message_to_fog(client,"FOG  ~~ Successful Demand Received ","ACK")
+
 
         else:
             print(f"The message send from Fog {username} is empty")
 
 
-     
- 
+    #*****************************************************************************************#   
 
-
-#*****************************************************************************************# 
-    def request_for_models(self):
-      for user in self.active_fogs:
-         self.send_message_to_fog(user[1], 'Models')
-
-
-#*****************************************************************************************# 
     def main(self):
     
        
        
         self.root.mainloop()
-# Main function
 
     def receive_fogs(self):
 
@@ -151,19 +159,43 @@ class Cloud:
                if (self.active_fogs[i][0]==id): existedFog=True
                else: i=i+1
             if (existedFog==False):
-               self.active_fogs.append((id, fog,Empty()))  #username, adr, list_of_models
+               self.active_fogs.append((id, fog,address, [None,None,None,None,None,None]))  #id, socket, address, (list of ==> [idEdge,address,accuracy,persoModel,domain,task])
                print( "" + f" Fog {id} added to the System")
                self.add_message(f"Fog {id} added to the System")
                self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
                break
             else:
+               self.active_fogs[i][1]=fog
+               self.active_fogs[i][2]=address
                print( "" + f" Fog {id} reconnected to the System")
                self.add_message(f"Fog {id}  reconnected to the System")
           else:
             print("Fog username is empty")
      
           threading.Thread(target=self.listen_for_messages, args=(fog, id, )).start()
-   
+
+
+
+#*****************************************************************************************# 
+
+    def start_FL(self):
+      self.add_message("Starting FL \n")
+      self.send_messages_to_all(None,"FLstart")
+
+ 
+
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+#*****************************************************************************************# 
+
+
+
 if __name__ == '__main__':
   
     args = args_parser()   # ajoute id 

@@ -20,13 +20,8 @@ PORT = 12346
 global i
 
 root =tk.Tk()
-root.geometry("600x600")
+root.geometry("1000x600")
 root.title(" Client Interface ") 
-
-
-# Creating a socket object
-# AF_INET: we are going to use IPv4 addresses
-# SOCK_STREAM: we are using TCP packets for communication
 
 
 class Edge(object):
@@ -51,7 +46,7 @@ class Edge(object):
 
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
+#### Socket Requests and Responses
      def connect(self):
    
        Var= False
@@ -84,12 +79,17 @@ class Edge(object):
                objectToSend.id=self.id
                objectToSend.subject=subject
                objectToSend.completeModel=copy.deepcopy(self.model.state_dict())
-               objectToSend.data=message
+               objectToSend.personnalizedModel=message
                objectToSend.accuracy=self.accuracy
                objectToSend.domain=self.domain
                objectToSend.task=self.task
                message = objectToSend
-            
+
+             else:
+                  objectToSend=Empty()
+                  objectToSend.data=None
+                  objectToSend.subject=subject
+                  message=objectToSend
                
            except Exception as e:
                  print(e)
@@ -118,19 +118,24 @@ class Edge(object):
            
             try:
               if isinstance(message, dict):
-                  if (message.subject=='RequestModelsFirst'):
+                  self.add_message('Fog Server is requesting For: ',message.subject+"\n")
+                  if (message.subject=='FLStart'):
                      self.add_message('Fog server is requesting for starting FL \n')
                      threading.Thread(target=self.Training, args=(True,)).start() #it returns the whole model
 
-                  elif  (message.subject=='RequestModels'):
-                             threading.Thread(target=self.Updating, args=(message.data,True,)).start() 
-                  elif  (message.subject=='FinalFL'):
+                  elif  (message.subject=='FL'):
+                             self.add_message('Fog server is requesting for an Other  FL Round \n')
+                             threading.Thread(target=self.Updating, args=(message.data,True,)).start() #message.data is personnalized weights
+                  elif  (message.subject=='FLEnd'):
+                             self.add_message('Fog server Compeleted  the Last FL Round \n')
                              threading.Thread(target=self.Updating, args=(message.data,False,)).start() 
-                  else:
 
-                      print('It is for TL model')
-                  self.add_message('Fog Server is requesting For: ',message.subject+"\n")
-
+                  elif  (message.subject=='TLModel'):
+                      self.model=message.data #le model tout entier 
+                      threading.Thread(target=self.Training, args=(False,)).start() #it returns the whole model
+                  
+                  else :
+                       self.add_message(message+"\n")
 
                      
             except Exception as e: 
@@ -157,7 +162,9 @@ class Edge(object):
          else: 
               threading.Thread(target=self.local_update_Other, args=(data,Request,)).start() #it returns the whole model
         
-        
+     def TransferLearningRequest(self):
+
+        self.send_message(None,"RequestTLModel")
         
 
 #*****************************************************************************************#
@@ -192,8 +199,17 @@ class Edge(object):
                  command = lambda:self.send_message(self.model.state_dict(),'LocalModel')
                  )
         Upload.pack(padx=5, pady=20, side=tk.LEFT)
+        TLRequest = tk.Button(root, height = 2,
+                 width = 20,
+                 text ="Request For Model",
+                 command = lambda:self.TransferLearningRequest()
+                 )
+        TLRequest.pack(padx=5, pady=20, side=tk.LEFT)
         root.mainloop()
 
+
+
+#### Learning Processes
 
      def local_train_FedAVG(self,Request):# with its own weights in case of FedAVG, with similar models
          self.add_message('Training')
