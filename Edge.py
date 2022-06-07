@@ -1,15 +1,18 @@
 # import required modules
-from queue import Empty
+#from utils.Empty import Empty
 import socket
 import threading
 import pickle
 import tkinter as tk
+from queue import Empty
+
 from Entities.Model import *
 from utils.EdgeOptions import args_parser
+#from utils.Empty import Empty
 from utils.create_MNIST_datasets import get_FashionMNIST
 import torch.nn.functional as F
 import torch
-from torch import nn
+from torch import import_ir_module, nn
 import copy
 from torch.utils.data import DataLoader
 
@@ -39,6 +42,7 @@ class Edge(object):
          self.task=args.task
          self.portFog=args.portFog
          self.socket= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+         self.aggregationmethod="FedAVG"
           
          #self.inputtxt=None
          if torch.cuda.is_available():
@@ -87,7 +91,7 @@ class Edge(object):
 
              else:
                   objectToSend=Empty()
-                  objectToSend.data=None
+                  objectToSend.data=message
                   objectToSend.subject=subject
                   message=objectToSend
                
@@ -117,14 +121,15 @@ class Edge(object):
         if message != '':
            
             try:
-              if isinstance(message, dict):
-                  self.add_message('Fog Server is requesting For: ',message.subject+"\n")
-                  if (message.subject=='FLStart'):
+                  self.add_message('Fog Server is requesting For: '+message.subject+"\n")
+                  if (message.subject=='FLstart'):
                      self.add_message('Fog server is requesting for starting FL \n')
+                     self.aggregationmethod=message.data
                      threading.Thread(target=self.Training, args=(True,)).start() #it returns the whole model
 
                   elif  (message.subject=='FL'):
                              self.add_message('Fog server is requesting for an Other  FL Round \n')
+                             print(message.data,'iiiiiiiiiiiiiiiiiiiiiiiiii')
                              threading.Thread(target=self.Updating, args=(message.data,True,)).start() #message.data is personnalized weights
                   elif  (message.subject=='FLEnd'):
                              self.add_message('Fog server Compeleted  the Last FL Round \n')
@@ -135,19 +140,19 @@ class Edge(object):
                       threading.Thread(target=self.Training, args=(False,)).start() #it returns the whole model
                   
                   else :
-                       self.add_message(message+"\n")
+                       self.add_message(message.subject+"\n")
 
                      
             except Exception as e: 
                 print('Error from listen_for_messages_from_server', e)
-            self.add_message(message+"\n")
+           
         else:
             print("Error", "Message recevied from Server is empty")
 #*****************************************************************************************#
      def Training(self,Request):
          if (Request==True):
              self.add_message('Starting FedGA-ICPS \n')
-             if (self.args.aggr=='FedAVG'):
+             if (self.aggregationmethod=='FedAVG'):
                 threading.Thread(target=self.local_train_FedAVG, args=(Request,)).start() #it returns the whole model
              else :
                 threading.Thread(target=self.local_train_Other, args=(Request,)).start() #it returns the whole model
@@ -157,7 +162,7 @@ class Edge(object):
 
      def Updating(self,data,Request):
 
-         if (self.args.aggr=='FedAVG'):
+         if (self.aggregationmethod=='FedAVG'):
               threading.Thread(target=self.local_update_FedAVG, args=(data,Request,)).start() #it returns the whole model
          else: 
               threading.Thread(target=self.local_update_Other, args=(data,Request,)).start() #it returns the whole model
@@ -345,7 +350,7 @@ class Edge(object):
 
  #*****************************************************************************************#       
      def local_update_Other(self,weights_global,Request): #with the global personnalized layers weights in case of FedPer, FedGa ..
-         
+         print(weights_global)
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers

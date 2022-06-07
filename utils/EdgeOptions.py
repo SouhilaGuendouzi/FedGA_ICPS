@@ -7,8 +7,8 @@ import argparse
 def args_parser():
     parser = argparse.ArgumentParser()
     #transfer arguments 
-    parser.add_argument('--domain', type=str, default='A', help="CNN model")
-    parser.add_argument('--task', type=str, default='IMGclassification', help="CNN model")
+    parser.add_argument('--domain', type=str, default='A', help="domain")
+    parser.add_argument('--task', type=str, default='IMGclassification', help="task")
 
     # federated arguments 
     parser.add_argument('--id', type=int, default=0, help="id of an entity") 

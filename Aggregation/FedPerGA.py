@@ -53,10 +53,13 @@ def FedPerGA(w,modell,datasett):
 
 
    
-  
-   initial_population=initial_population.tolist()
+   try: 
+       initial_population=initial_population.tolist()
+
+   except :
+      initial_population=initial_population
    num_generations =5# Number of generations.
-   num_parents_mating = 4 # Number of solutions to be selected as parents in the mating pool.
+   num_parents_mating =2 #4 # Number of solutions to be selected as parents in the mating pool.
   
 
    parent_selection_type = "rank" # Type of parent selection.

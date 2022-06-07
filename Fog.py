@@ -1,5 +1,6 @@
 # Import required modules
 
+#from utils.Empty import Empty
 from queue import Empty
 import socket
 import threading
@@ -51,7 +52,7 @@ class Fog:
         self.Start_FL = tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Start ",
-                 command = lambda:self.send_message_to_cloud(len(self.active_clients),"Test")
+                 command = lambda:self.send_message_to_cloud("hello","TEst")
                  )
         self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
     
@@ -62,7 +63,7 @@ class Fog:
           self.add_message(f"Running the server on {self.HOST} {self.PORT} \n")
         except:
            print(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
-           self.add_message(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
+           self.add_message(f"Unable to bind to host {self.HOST} and port {self.PortCloud} \n")
     
     
     
@@ -77,6 +78,7 @@ class Fog:
 
     
            self.cloud.connect((self.HostCloud, self.PortCloud))
+           self.add_message("Successfully connected to Cloud server \n")
            self.send_message_to_cloud(self.id,'Connection')
            Var= True
 
@@ -97,17 +99,19 @@ class Fog:
         message=pickle.loads(message)
         if message != '':
            try:
-              if isinstance(message, dict):
-                  self.add_message('Cloud Server is requesting For: ',message.subject+"\n")
-                  if (message.subject=='FLStart'):
+             
+                  self.add_message('Cloud Server is requesting For: '+message.subject+"\n")
+                
+                  if (message.subject=='FLstart'):
                      self.receivedLocalModels=0
                      self.Actuator="FL"
-                     self.send_messages_to_all(None, "FLStart")
+                     
+                     self.send_messages_to_all(message.data, "FLstart")
 
                   elif  (message.subject=='FL'):
                       self.receivedLocalModels=0
                       self.add_message('Cloud server is requesting for an Other  FL Round \n')
-                      self.send_messages_to_all(None, "FL")
+                      self.send_messages_to_all(message.data, "FL")
                   elif  (message.subject=='FLEnd'):
                       self.Actuator="Free"
                       self.add_message('Cloud server Compeleted  the Last FL Round \n')
@@ -119,10 +123,9 @@ class Fog:
                   elif  (message.subject=='RequestTLModel'):
                       self.TransferModelToCloud(message)
                   else :
-                       self.add_message(message+"\n")
+                       self.add_message(message.subject+"\n")
 
-              else :
-                  print('waw')
+             
            except Exception as e: 
                 print('Error from listen_for_messages_from_server', e)       
         else:
@@ -135,16 +138,22 @@ class Fog:
        try :
    
         if message != '':
-           obj =Empty()
-           obj.data=message
-           obj.subject=subject
-           message=obj
-           self.cloud.send(message)
+                  objectToSend=Empty()
+                  objectToSend.data=message
+                  objectToSend.subject=subject
+                  message=objectToSend
+                  message = pickle.dumps(message)
+                  self.cloud.send(message)
+                  print('message sent to cloud server')
+                  
       
         else:
+           
            print("Empty message", "Message cannot be empty")
        except Exception as e : 
+       
            print(e)
+       
 
 
 
@@ -154,7 +163,10 @@ class Fog:
       id_user=message.data[0]  #id
       for usr in self.active_clients:
         if (usr[0]==id_user): 
-          self.send_message_to_client(usr[1], message.data[2], "TLModel")
+       
+          data=[message.data[0],message.data[2],usr[3][1]]  #id, #address, #complete model
+         
+          self.send_message_to_cloud( data, "TLModel")
     #**********************************************************************#    
 
 
@@ -172,15 +184,16 @@ class Fog:
       while 1:
           ExistedClient=False
           i=0
-          id = client.recv(1000000)#.decode('utf-8')
-          id=pickle.loads(id)
-          print(id)
+          msg = client.recv(1000000)#.decode('utf-8')
+          msg=pickle.loads(msg)
+          id=msg.data
+          
           if str(id) != '':
                while(i<len(self.active_clients) and  ExistedClient==False ):
                  if (self.active_clients[i][0]==id): ExistedClient=True
                  else : i=i+1
                if (ExistedClient==False):
-                 self.active_clients.append((id, client,address,[None,None,None,None,None]))  #username, adr, data object     
+                 self.active_clients.append([id, client,address,[None,None,None,None,None]])  #username, adr, data object     
                  print( "SERVER~" + f"Client {id} added to the System")
                  self.add_message(f"Client {id} added to the System \n")
                  
@@ -190,8 +203,7 @@ class Fog:
                  self.active_clients[i][2]=address
                  print( "SERVER~" + f"Client {id} is reconnected to the System")
                  self.add_message(f"Client {id} reconnected to the System \n")
-               
-
+              
           else:
             print("Client username is empty")
       
@@ -251,17 +263,17 @@ class Fog:
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
-                   if (self.receivedLocalModels==len(self.active_clients) and self.Actuator=="FL"): 
+                   if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
                      self.sendLocalModels()
                  elif (message.subject=="RequestTLModel"):
                
-                   msg=[self.active_clients[i][0],self.active_clients[i][3][3],self.active_clients[i][3][4]]
+                   msg=[self.active_clients[i][0],self.active_clients[i][2],self.active_clients[i][3][3],self.active_clients[i][3][4]] #id, adress, domain, task
                    self.send_message_to_cloud(msg,"RequestTLModel" )
                 except Exception as e:
                   print('Exception from listen_for_messages',e)
               i=i+1
             self.send_message_to_client(client,"FOG  ~~ Successful Demand Received ","ACK")
-            print(self.active_clients)
+          
 
         else:
             print(f"The message send from client {username} is empty")
@@ -271,11 +283,14 @@ class Fog:
 
 
     def sendLocalModels(self):
-      list= [None for i in len(self.active_clients)]
+      list= []
+      
       for usr in self.active_clients:
-        list.append((usr[0],usr[2],usr[3][2],usr[3][1],usr[3][3],usr[3][4])) #id, address, accuracy, Personnalized Model, domain, task
-
+        avgAccuracy=(usr[3][2][0]+usr[3][2][1])/2
+        list.append([usr[0],usr[2],avgAccuracy,usr[3][0],usr[3][3],usr[3][4]]) #id, address, accuracy, Personnalized Model, domain, task
+      
       self.send_message_to_cloud(list,"LocalModels")
+      
 
 
 
@@ -283,9 +298,9 @@ class Fog:
     def TransferModelToClient(self,message):
       model=None
       for usr in self.active_clients:
-        if (usr[0]==id_user): 
-          model =usr[3][1]  #complete model of the user
-     
+        if (usr[0]==message.data[0]):  #id
+          model =message.data[0] # the model and not wights
+      
       self.send_message_to_cloud(model, "TLModel")
     #**********************************************************************#
 
@@ -297,7 +312,7 @@ if __name__ == '__main__':
     args = args_parser()   # ajoute id 
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    print(torch.cuda.is_available())
+    #print(torch.cuda.is_available())
        # Set server limit
     fog =Fog(args=args,HOST='127.0.0.1',HostCloud='127.0.0.1')
     threading.Thread(target=fog.receive_clients, args=()).start()
