@@ -33,6 +33,7 @@ class Cloud:
         self.active_fogs = []
         self.numberFogsreceived=0
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # IPv4 addresses, TCP
+        self.server.setblocking(True)
 
 
 
@@ -57,7 +58,7 @@ class Cloud:
 
 
 
-        ###################### UI #####################################################
+###################### UI #####################################################
         self.root =tk.Tk()
         self.root.geometry("600x600")
         self.root.title(" Cloud Interface ") 
@@ -85,7 +86,7 @@ class Cloud:
            print(f"Unable to bind to host {HOST} and port {PORT} because of {e}")
 
         
-    #*****************************************************************************************#
+#*****************************************************************************************#
     def add_message(self,message):
      
        self.inputtxt.config(state=tk.NORMAL)
@@ -107,13 +108,13 @@ class Cloud:
            print("Empty message", "Message cannot be empty")
        except Exception as e : 
            print(e)
-    #*****************************************************************************************#
+#*****************************************************************************************#
     def send_messages_to_all(self,message,subject):  
     
        for user in self.active_fogs:
 
           self.send_message_to_fog(user[1], message,subject)
-    #*****************************************************************************************#
+#*****************************************************************************************#
     def listen_for_messages_from_fog(self,fog, id):
     
       while 1:
@@ -136,6 +137,7 @@ class Cloud:
                  if (message.subject=="LocalModels"):
                     
                     self.numberFogsreceived+=1
+  
                     self.active_fogs[i][2]=message.data
                     
                     threading.Thread(target=self.registryUpdate, args=()).start()
@@ -158,13 +160,8 @@ class Cloud:
 
         else:
             print(f"The message send from Fog {username} is empty")
-    #*****************************************************************************************#   
+#*****************************************************************************************#   
 
-    def main(self):
-
-        self.root.mainloop()
-    
-    #*****************************************************************************************#   
     def receive_fogs(self):
 
       
@@ -204,8 +201,8 @@ class Cloud:
       threading.Thread(target=self.listen_for_messages_from_fog, args=(fog, id, )).start()
 #*****************************************************************************************# 
     def registryUpdate(self):
-      if ( self.numberFogsreceived==self.args.num_fogs):
-          
+      #if ( self.numberFogsreceived==len(self.active_fogs)):
+          print('registry update')
           if (len(self.registry)==0):
             #print(self.active_fogs[0][2][0][0])
             #print(self.active_fogs[0][2][0][1])
@@ -213,17 +210,23 @@ class Cloud:
             #print(self.active_fogs[0][2][0][4])
             #print(self.active_fogs[0][2][0][5])
             self.registry.append([self.active_fogs[0][2][0][0],self.active_fogs[0][2][0][1],self.active_fogs[0][2][0][2],self.active_fogs[0][2][0][4],self.active_fogs[0][2][0][5]]) #id, address, avgaccuracy,domain , task
+         
           for fog in self.active_fogs:
-              print(f'Fog {fog[0]}')
+              #print(f'Fog {fog[0]}')
               for usr in fog[2]:
-                print(f'user {usr[0]}')
+                #print(f'user {usr[0]}')
                 i=0
                 while (i< len(self.registry)):
+                  print(f'user{usr[0]} ',usr[4],self.registry[i][3],usr[5],self.registry[i][4], usr[2],self.registry[i][2])
                   if (usr[4]==self.registry[i][3] and usr[5]==self.registry[i][4] and usr[2]>self.registry[i][2] ): #same domain and task but accuracy >>
+                    print(f'Replace {fog  [0]},{usr[0]}')
                     self.registry[i]=[usr[0],usr[1],usr[2],usr[4],usr[5]] #id, address, avgaccuracy, domain, task
                   else: i+=1
-                if (i==len(self.registry)):  self.registry.append([usr[0],usr[1],usr[2],usr[4],usr[5]])
-      print(self.registry)
+                if (i==len(self.registry)):  
+                  print(f'Append {fog  [0]},{usr[0]}')
+                  self.registry.append([usr[0],usr[1],usr[2],usr[4],usr[5]])
+          self.numberFogsreceived=0     
+      
 #*****************************************************************************************# 
 
     def start_FL(self):
@@ -234,8 +237,11 @@ class Cloud:
     
 #*****************************************************************************************# 
     def FLAggregation(self):
-       self.FLrounds-=1
-       if ( self.numberFogsreceived==self.args.num_fogs):
+      
+       if ( self.numberFogsreceived==len(self.active_fogs)):
+        
+         self.FLrounds-=1
+         self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
          local_weights=[]
          for fog in self.active_fogs:
               print(f'Fog {fog[0]}')
@@ -244,11 +250,13 @@ class Cloud:
                 local_weights.append(usr[3]) #local models weights
 
          self.aggregate(local_weights,self.args.aggr)
-         print(self.weights_global)
-         if (self.FLrounds==0): self.send_messages_to_all(self.weights_global,"FLEnd")
+         #print(self.weights_global)
+         if (self.FLrounds==0):
+            self.send_messages_to_all(self.weights_global,"FLEnd")
+            self.add_message("Sending Last Global Model ")
          
          else : self.send_messages_to_all(self.weights_global,"FL")
-          
+         self.numberFogsreceived=0          
 
 
 #*****************************************************************************************# 
@@ -314,8 +322,12 @@ class Cloud:
         return self.global_model
 
 
+#*****************************************************************************************# 
 
+    def main(self):
 
+        self.root.mainloop()
+#*****************************************************************************************#   
 if __name__ == '__main__':
   
     args = args_parser()   # ajoute id 

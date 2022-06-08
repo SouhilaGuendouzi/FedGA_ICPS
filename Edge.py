@@ -247,10 +247,10 @@ class Edge(object):
          
          self.add_message('. \n')   
          self.add_message("Testing")
-         msg= self.test_img('train')
-         self.add_message('Accuracy Train  \t'+str(msg[1])+"\n")
-         msg= self.test_img('test')
-         self.add_message('Accuracy Test   \t'+str(msg[1])+"\n")
+         acc, loss= self.test_img('train')
+         self.add_message('Accuracy Train  \t'+str(acc)+"\n")
+         acc, loss= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(acc)+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
              self.send_message(self.weightsJustforReturn,'LocalModel')
@@ -295,10 +295,10 @@ class Edge(object):
              print(e)
          self.add_message('. \n')   
          self.add_message("Testing")
-         msg= self.test_img('train')
-         self.add_message('Accuracy Train  \t'+str(msg[1])+"\n")
-         msg= self.test_img('test')
-         self.add_message('Accuracy Test   \t'+str(msg[1])+"\n")   
+         acc, loss= self.test_img('train')
+         self.add_message('Accuracy Train  \t'+str(acc)+"\n")
+         acc, loss= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(acc)+"\n")   
          # Here ==> self.weights contains only classification layers (fully connected layers)
          self.weightsJustforReturn=self.weights
          if (Request==True):
@@ -307,7 +307,7 @@ class Edge(object):
 
 #*****************************************************************************************#
      def local_update_FedAVG(self,weights_global,Request):   #with the global layers weights in case of FedAVG, with similar models
- 
+         self.add_message('Updating .')
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.previous_weights=self.model.state_dict()
@@ -322,7 +322,7 @@ class Edge(object):
         
          
          for iter in range(self.args.local_ep):
-           
+            self.add_message('.')
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
 
@@ -342,7 +342,12 @@ class Edge(object):
             else :
                 epoch_loss.append(self.loss)
                 self.model.load_state_dict(self.previous_weights)
-           
+         self.add_message('. \n')   
+         self.add_message("Testing")
+         acc, loss= self.test_img('train')
+         self.add_message('Accuracy Train  \t'+str(acc)+"\n")
+         acc, loss= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(acc)+"\n")    
          self.weightsJustforReturn=self.weights
          if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
          return  self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
@@ -350,7 +355,7 @@ class Edge(object):
 
  #*****************************************************************************************#       
      def local_update_Other(self,weights_global,Request): #with the global personnalized layers weights in case of FedPer, FedGa ..
-         print(weights_global)
+         self.add_message('Updating .')
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers
@@ -363,7 +368,7 @@ class Edge(object):
          epoch_loss = []
 
          for iter in range(self.args.local_ep):
-          
+            self.add_message('.')
             batch_loss = []
             for batch_idx, (images, labels) in enumerate(self.data):
                 images, labels = images.to(self.args.device), labels.to(self.args.device)
@@ -393,7 +398,12 @@ class Edge(object):
 
           except:
              print('')
-         
+         self.add_message('. \n')   
+         self.add_message("Testing")
+         acc, loss= self.test_img('train')
+         self.add_message('Accuracy Train  \t'+str(acc)+"\n")
+         acc, loss= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(acc)+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i

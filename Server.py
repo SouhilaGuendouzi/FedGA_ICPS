@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     print(torch.cuda.is_available())
-    net_glob = Net().to(args.device)
+    net_glob = Model_Fashion().to(args.device)
 
     net_glob.train() 
     w=net_glob.state_dict()
@@ -41,10 +41,10 @@ if __name__ == '__main__':
     dict_users={}
  
 
-    model_A=Net().to(args.device)
-    model_B=Net().to(args.device)
-    model_C=Net().to(args.device)
-    model_D=Net().to(args.device)
+    model_A=Model_A().to(args.device)
+    model_B=Model_B().to(args.device)
+    model_C=Model_C().to(args.device)
+    model_D=Model_D().to(args.device)
 
 
     dict_users[0] = Edge (0,model_A, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #A
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
 
 ########################## Begin process #########################################################################################
-"""
+
     accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
     for iter in range(args.epochs):
         
@@ -108,4 +108,3 @@ if __name__ == '__main__':
 
     Plot_Graphes(args,accuracy_locals_train,accuracy_locals_test,loss_locals_train,loss_locals_test)
 
-  """

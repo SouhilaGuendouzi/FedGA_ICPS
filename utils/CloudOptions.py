@@ -9,7 +9,7 @@ def args_parser():
     # federated arguments 
     parser.add_argument('--id', type=int, default=0, help="id of an entity") 
     parser.add_argument('--epochs', type=int, default=3, help="rounds of training") # epochs number is the same as number of layers in FedMA
-    parser.add_argument('--num_fogs', type=int, default=1, help="number of fogs: K")
+    parser.add_argument('--num_fogs', type=int, default=2, help="number of fogs: K")
     parser.add_argument('--frac', type=float, default=0.1, help="the fraction of clients: C")
     parser.add_argument('--local_bs', type=int, default=10, help="local batch size: B")
     parser.add_argument('--bs', type=int, default=128, help="test batch size")
