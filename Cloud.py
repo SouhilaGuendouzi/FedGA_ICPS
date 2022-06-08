@@ -201,29 +201,27 @@ class Cloud:
       threading.Thread(target=self.listen_for_messages_from_fog, args=(fog, id, )).start()
 #*****************************************************************************************# 
     def registryUpdate(self):
-      #if ( self.numberFogsreceived==len(self.active_fogs)):
+      #if ( self.numberFogsreceived==len(self.active_fogs)):%
+          #print('Registry !!!!!!!!!',self.registry[0])
           print('registry update')
           if (len(self.registry)==0):
-            #print(self.active_fogs[0][2][0][0])
-            #print(self.active_fogs[0][2][0][1])
-            #print(self.active_fogs[0][2][0][2])
-            #print(self.active_fogs[0][2][0][4])
-            #print(self.active_fogs[0][2][0][5])
+           
             self.registry.append([self.active_fogs[0][2][0][0],self.active_fogs[0][2][0][1],self.active_fogs[0][2][0][2],self.active_fogs[0][2][0][4],self.active_fogs[0][2][0][5]]) #id, address, avgaccuracy,domain , task
-         
+          print(len(self.active_fogs))
           for fog in self.active_fogs:
               #print(f'Fog {fog[0]}')
               for usr in fog[2]:
                 #print(f'user {usr[0]}')
                 i=0
                 while (i< len(self.registry)):
-                  print(f'user{usr[0]} ',usr[4],self.registry[i][3],usr[5],self.registry[i][4], usr[2],self.registry[i][2])
+                  #print(f'user{usr[0]} ',usr[4],self.registry[i][3],usr[5],self.registry[i][4], usr[2],self.registry[i][2])
+                  #print(usr[4]==self.registry[i][3] , usr[5]==self.registry[i][4])
                   if (usr[4]==self.registry[i][3] and usr[5]==self.registry[i][4] and usr[2]>self.registry[i][2] ): #same domain and task but accuracy >>
                     print(f'Replace {fog  [0]},{usr[0]}')
                     self.registry[i]=[usr[0],usr[1],usr[2],usr[4],usr[5]] #id, address, avgaccuracy, domain, task
                   else: i+=1
                 if (i==len(self.registry)):  
-                  print(f'Append {fog  [0]},{usr[0]}')
+                  print(f'Append {fog [0]},{usr[0]}')
                   self.registry.append([usr[0],usr[1],usr[2],usr[4],usr[5]])
           self.numberFogsreceived=0     
       

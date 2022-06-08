@@ -129,7 +129,7 @@ class Edge(object):
 
                   elif  (message.subject=='FL'):
                              self.add_message('Fog server is requesting for an Other  FL Round \n')
-                             print(message.data,'iiiiiiiiiiiiiiiiiiiiiiiiii')
+                    
                              threading.Thread(target=self.Updating, args=(message.data,True,)).start() #message.data is personnalized weights
                   elif  (message.subject=='FLEnd'):
                              self.add_message('Fog server Compeleted  the Last FL Round \n')
@@ -397,7 +397,7 @@ class Edge(object):
            del[self.weights['features.{}.bias'.format(i)]]
 
           except:
-             print('')
+             break#('')print
          self.add_message('. \n')   
          self.add_message("Testing")
          acc, loss= self.test_img('train')
