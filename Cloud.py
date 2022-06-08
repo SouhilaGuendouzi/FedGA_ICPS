@@ -83,9 +83,7 @@ class Cloud:
           print(f"Running the server on {HOST} {PORT}")
           self.add_message(f"Running the server on {HOST} {PORT} \n")
         except Exception as e:
-           print(f"Unable to bind to host {HOST} and port {PORT} because of {e}")
-
-        
+           print(f"Unable to bind to host {HOST} and port {PORT} because of {e}")       
 #*****************************************************************************************#
     def add_message(self,message):
      
@@ -138,7 +136,7 @@ class Cloud:
                     
                     self.numberFogsreceived+=1
   
-                    self.active_fogs[i][2]=message.data
+                    self.active_fogs[i][3]=message.data
                     
                     threading.Thread(target=self.registryUpdate, args=()).start()
                     threading.Thread(target=self.FLAggregation, args=()).start()
@@ -146,10 +144,10 @@ class Cloud:
 
                  elif (message.subject=="RequestTLModel"):
 
-                  threading.Thread(target= self.SearchANdRequestTlModel(), args=()).start()
+                  threading.Thread(target= self.SearchANdRequestTlModel, args=(message.data,)).start()
                   
                  elif (message.subject=="TLModel"):
-                    threading.Thread(target=  self.TransferTLModelToFog(), args=()).start()
+                    threading.Thread(target=  self.TransferTLModelToFog, args=(message.data,)).start()
 
                   
                 except Exception as e:
@@ -169,8 +167,20 @@ class Cloud:
           fog, address = self.server.accept()
           threading.Thread(target=self.Fog_handler, args=(fog, address)).start()
 
-#*****************************************************************************************#    
+#*****************************************************************************************#   
+# 
+    def SearchANdRequestTlModel(self,message) :
+      stop =False
+      if (message !=''): #message=[idEdge,addressEdge,domain, task]
+        i =0
+        while (i< len(self.registry) and stop==False):
+          if (self.registry[i][4]==message[2] and self.registry[i][5] ==message[3]):  #same domain and task
+            obj = [message[0],]
+            self.send_message_to_fog(self.registry[i][1],self.registry[i][0],"RequestTLModel")  #message.subject="RequestTLModel" \message.data=idEdge that contains the model
+          
+
     def Fog_handler(self,fog,address):  
+
   
       while 1:
           existedFog=False
@@ -206,7 +216,7 @@ class Cloud:
           print('registry update')
           if (len(self.registry)==0):
            
-            self.registry.append([self.active_fogs[0][2][0][0],self.active_fogs[0][2][0][1],self.active_fogs[0][2][0][2],self.active_fogs[0][2][0][4],self.active_fogs[0][2][0][5]]) #id, address, avgaccuracy,domain , task
+            self.registry.append([self.active_fogs[0][3][0][0],self.active_fogs[0][1],self.active_fogs[0][3][0][1],self.active_fogs[0][3][0][2],self.active_fogs[0][3][0][4],self.active_fogs[0][3][0][5]]) #idedge,socketFog, addressEdge, avgaccuracy,domain , task
           print(len(self.active_fogs))
           for fog in self.active_fogs:
               #print(f'Fog {fog[0]}')
@@ -216,13 +226,18 @@ class Cloud:
                 while (i< len(self.registry)):
                   #print(f'user{usr[0]} ',usr[4],self.registry[i][3],usr[5],self.registry[i][4], usr[2],self.registry[i][2])
                   #print(usr[4]==self.registry[i][3] , usr[5]==self.registry[i][4])
-                  if (usr[4]==self.registry[i][3] and usr[5]==self.registry[i][4] and usr[2]>self.registry[i][2] ): #same domain and task but accuracy >>
+                  if (usr[4]==self.registry[i][4] and usr[4]==self.registry[i][4] and usr[2]>self.registry[i][3] ): #same domain and task but accuracy >>
                     print(f'Replace {fog  [0]},{usr[0]}')
-                    self.registry[i]=[usr[0],usr[1],usr[2],usr[4],usr[5]] #id, address, avgaccuracy, domain, task
+                    self.registry[i][0]=usr[0]
+                    self.registry[i][1]=fog[1]  #socket
+                    self.registry[i][2]=usr[1]
+                    self.registry[i][3]=usr[2]
+                    self.registry[i][4]=usr[4]
+                    self.registry[i][5]=usr[5]
                   else: i+=1
                 if (i==len(self.registry)):  
                   print(f'Append {fog [0]},{usr[0]}')
-                  self.registry.append([usr[0],usr[1],usr[2],usr[4],usr[5]])
+                  self.registry.append([usr[0],fog[1],usr[1],usr[2],usr[4],usr[5]])
           self.numberFogsreceived=0     
       
 #*****************************************************************************************# 

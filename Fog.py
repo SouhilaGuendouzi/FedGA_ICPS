@@ -162,7 +162,7 @@ class Fog:
 # *************************************************************************#
     def TransferModelToCloud(self,message):
 
-      id_user=message.data[0]  #id
+      id_user=message.data  #id
       for usr in self.active_clients:
         if (usr[0]==id_user): 
           data=[message.data[0],message.data[2],usr[3][1]]  #id, #address, #complete model
