@@ -1,5 +1,6 @@
 # import required modules
 #from utils.Empty import Empty
+from email import message
 import socket
 import threading
 import pickle
@@ -49,6 +50,9 @@ class Edge(object):
               self.model.cuda()
 
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        
+        
 
 #### Socket Requests and Responses
      def connect(self):
@@ -168,8 +172,8 @@ class Edge(object):
               threading.Thread(target=self.local_update_Other, args=(data,Request,)).start() #it returns the whole model
         
      def TransferLearningRequest(self):
-
-        self.send_message(None,"RequestTLModel")
+        message=[self.domain,self.task]
+        self.send_message(message,"RequestTLModel")
         
 
 #*****************************************************************************************#
@@ -289,7 +293,7 @@ class Edge(object):
            
            del[self.weights['features.{}.weight'.format(i)]]
       
-           del[self.weights['features.{}.bias'.format(i)]]
+           del[self.weights[f'features.{i}.bias']]
 
           except Exception as e:
              print(e)
@@ -303,6 +307,7 @@ class Edge(object):
          self.weightsJustforReturn=self.weights
          if (Request==True):
              self.send_message(self.weightsJustforReturn,'LocalModel')
+         print(len( self.weightsJustforReturn))
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 #*****************************************************************************************#
@@ -359,6 +364,7 @@ class Edge(object):
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers
+         print("Length global model weights", len(weights_global))
          self.previous_weights=self.model.state_dict()
          self.weights.update(self.w)
          self.data = self.datasetTrain
@@ -397,7 +403,7 @@ class Edge(object):
            del[self.weights['features.{}.bias'.format(i)]]
 
           except:
-             break#('')print
+            print('')
          self.add_message('. \n')   
          self.add_message("Testing")
          acc, loss= self.test_img('train')
@@ -405,6 +411,7 @@ class Edge(object):
          acc, loss= self.test_img('test')
          self.add_message('Accuracy Test   \t'+str(acc)+"\n")  
          self.weightsJustforReturn=self.weights
+         print(len( self.weightsJustforReturn))
          if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
@@ -420,8 +427,6 @@ class Edge(object):
             self.data=self.datasetTrain
         self.w=self.model.state_dict()
         
-       
-    
         test_loss = 0
         correct = 0
     

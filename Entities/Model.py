@@ -41,6 +41,8 @@ class Classification_Layers(nn.Module):
             nn.Dropout(),
             nn.Linear(100, 10)
 
+     
+
     )
   def forward(self, t):
 
@@ -86,8 +88,7 @@ class Model_A(nn.Module):
         )
         
         self.classification=nn.Sequential(
-              nn.Flatten(),
-    
+            nn.Flatten(),
             nn.Linear(12*4*4, 50),
             nn.ReLU(),
             nn.Linear(50, 100),
@@ -124,7 +125,6 @@ class Model_B(nn.Module):
         self.classification = nn.Sequential(
             
            nn.Flatten(),
-    
             nn.Linear(12*4*4, 50),
             nn.ReLU(),
             nn.Linear(50, 100),
@@ -172,7 +172,6 @@ class  Model_C(nn.Module):
             )
         self.classification=nn.Sequential(
             nn.Flatten(),
-    
             nn.Linear(12*4*4, 50),
             nn.ReLU(),
             nn.Linear(50, 100),
@@ -202,7 +201,6 @@ class  Model_D(nn.Module):
 
         self.classification=nn.Sequential(
              nn.Flatten(),
-    
             nn.Linear(12*4*4, 50),
             nn.ReLU(),
             nn.Linear(50, 100),
@@ -218,8 +216,6 @@ class  Model_D(nn.Module):
         
         return t
 
-
-  
 
 class Net(nn.Module):
     def __init__(self):

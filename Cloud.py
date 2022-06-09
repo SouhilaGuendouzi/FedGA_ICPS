@@ -138,15 +138,17 @@ class Cloud:
   
                     self.active_fogs[i][3]=message.data
                     
-                    threading.Thread(target=self.registryUpdate, args=()).start()
-                    threading.Thread(target=self.FLAggregation, args=()).start()
+                    #threading.Thread(target=#, args=()).start()
+                    self.registryUpdate()
+                    self.FLAggregation()
 
 
                  elif (message.subject=="RequestTLModel"):
-
+                  print(message.data)
                   threading.Thread(target= self.SearchANdRequestTlModel, args=(message.data,)).start()
                   
                  elif (message.subject=="TLModel"):
+                    print(message.data)
                     threading.Thread(target=  self.TransferTLModelToFog, args=(message.data,)).start()
 
                   
@@ -168,17 +170,42 @@ class Cloud:
           threading.Thread(target=self.Fog_handler, args=(fog, address)).start()
 
 #*****************************************************************************************#   
-# 
+ 
     def SearchANdRequestTlModel(self,message) :
+      print('I am searching ...')
       stop =False
       if (message !=''): #message=[idEdge,addressEdge,domain, task]
         i =0
         while (i< len(self.registry) and stop==False):
           if (self.registry[i][4]==message[2] and self.registry[i][5] ==message[3]):  #same domain and task
-            obj = [message[0],]
-            self.send_message_to_fog(self.registry[i][1],self.registry[i][0],"RequestTLModel")  #message.subject="RequestTLModel" \message.data=idEdge that contains the model
-          
+            stop=True
+            print('I find same domain and task  ...')
+            obj = [message[0],self.registry[i][0]] #IdEdge (that need the model), IdEdge_cible( that contains the complete model)
+            self.send_message_to_fog(self.registry[i][1],obj,"RequestTLModel")  #socketFog\message.subject="RequestTLModel" \message.data=idEdge that contains the model
+          else :  #the case that it doesn't find the appropriate model
+              i+=1
+        if (stop==False):  
+            print('we didnot find the appropriate model')
 
+#*****************************************************************************************#   
+    def TransferTLModelToFog(self,message):  
+      id_user=message[0]
+      model = message[1]   
+      stop =False 
+      i,j =0,0
+      while (i< len(self.active_fogs) and stop==False):
+        j=0
+        while (j< len(self.active_fogs[i][3]) and stop==False):
+          if (self.active_fogs[i][3][j][0]==id_user):
+            fogSocket=self.active_fogs[i][1]
+            print('I am transferring the model')
+            self.send_message_to_fog(fogSocket,message,"TLModel")
+            stop=True
+          j+=j
+        i+=i
+
+
+#*****************************************************************************************#  
     def Fog_handler(self,fog,address):  
 
   
@@ -211,40 +238,51 @@ class Cloud:
       threading.Thread(target=self.listen_for_messages_from_fog, args=(fog, id, )).start()
 #*****************************************************************************************# 
     def registryUpdate(self):
-      #if ( self.numberFogsreceived==len(self.active_fogs)):%
+      if ( self.numberFogsreceived==len(self.active_fogs)):
           #print('Registry !!!!!!!!!',self.registry[0])
           print('registry update')
           if (len(self.registry)==0):
-           
+            print(self.active_fogs[0][3][0][0])
+            print(self.active_fogs[0][1])
+            print(self.active_fogs[0][3][0][1])
+            print(self.active_fogs[0][3][0][2])
+            print(self.active_fogs[0][3][0][4])
+            print(self.active_fogs[0][3][0][5])
             self.registry.append([self.active_fogs[0][3][0][0],self.active_fogs[0][1],self.active_fogs[0][3][0][1],self.active_fogs[0][3][0][2],self.active_fogs[0][3][0][4],self.active_fogs[0][3][0][5]]) #idedge,socketFog, addressEdge, avgaccuracy,domain , task
-          print(len(self.active_fogs))
+          #print(len(self.active_fogs[0][3]),len(self.active_fogs[0][3]))
           for fog in self.active_fogs:
               #print(f'Fog {fog[0]}')
-              for usr in fog[2]:
+              for usr in fog[3]:
                 #print(f'user {usr[0]}')
                 i=0
-                while (i< len(self.registry)):
-                  #print(f'user{usr[0]} ',usr[4],self.registry[i][3],usr[5],self.registry[i][4], usr[2],self.registry[i][2])
+                stop=False
+                while (i< len(self.registry) and stop==False):
+                  #print(f'user{usr[0]} comparing with user {[self.registry[i][0]]} ',usr[4],self.registry[i][4],usr[5],self.registry[i][5], usr[2],self.registry[i][3])
                   #print(usr[4]==self.registry[i][3] , usr[5]==self.registry[i][4])
                   if (usr[4]==self.registry[i][4] and usr[4]==self.registry[i][4] and usr[2]>self.registry[i][3] ): #same domain and task but accuracy >>
-                    print(f'Replace {fog  [0]},{usr[0]}')
+                    #print(f'Replace {fog  [0]},{usr[0]}')
+                    stop=True
                     self.registry[i][0]=usr[0]
                     self.registry[i][1]=fog[1]  #socket
                     self.registry[i][2]=usr[1]
                     self.registry[i][3]=usr[2]
                     self.registry[i][4]=usr[4]
                     self.registry[i][5]=usr[5]
-                  else: i+=1
-                if (i==len(self.registry)):  
-                  print(f'Append {fog [0]},{usr[0]}')
+                  elif (usr[4]==self.registry[i][4] and usr[4]==self.registry[i][4] and usr[2]==self.registry[i][3] ): #same domain and task and accuracy 
+                    #print('same')
+                    stop=True
+                  i+=1
+                  
+                if (i==len(self.registry) and stop==False):  
+                  #print(f'Append {fog [0]},{usr[0]}')
                   self.registry.append([usr[0],fog[1],usr[1],usr[2],usr[4],usr[5]])
-          self.numberFogsreceived=0     
+             
       
 #*****************************************************************************************# 
 
     def start_FL(self):
       self.FLrounds=self.args.epochs
-      self.receive_fogs=0
+      self.numberFogsreceived=0
       self.add_message("Starting FL \n")
       self.send_messages_to_all(self.args.aggr,"FLstart")
     
@@ -257,15 +295,16 @@ class Cloud:
          self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
          local_weights=[]
          for fog in self.active_fogs:
-              print(f'Fog {fog[0]}')
-              for usr in fog[2]:
-                print(f'user {usr[0]}') 
+              #print(f'Fog {fog[0]}')
+              for usr in fog[3]:
+                #print(f'user {usr[0]}') 
                 local_weights.append(usr[3]) #local models weights
 
          self.aggregate(local_weights,self.args.aggr)
          #print(self.weights_global)
          if (self.FLrounds==0):
             self.send_messages_to_all(self.weights_global,"FLEnd")
+            self.numberFogsreceived=0    
             self.add_message("Sending Last Global Model ")
          
          else : self.send_messages_to_all(self.weights_global,"FL")

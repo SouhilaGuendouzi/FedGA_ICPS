@@ -41,7 +41,7 @@ class Fog:
         self.args=args
 
 
-
+        
         self.root =tk.Tk()
         self.root.geometry("600x600")
         self.root.title(" Fog Interface ") 
@@ -129,7 +129,7 @@ class Fog:
                       self.send_messages_to_all(message.data, "FLEnd")
 
                   elif  (message.subject=='TLModel'):
-                      self.TransferModelToClient(message)
+                      self.TransferModelToClient(message.data)
 
                   elif  (message.subject=='RequestTLModel'):
                       self.TransferModelToCloud(message)
@@ -162,10 +162,10 @@ class Fog:
 # *************************************************************************#
     def TransferModelToCloud(self,message):
 
-      id_user=message.data  #id
+      id_user=message.data[1]  #id
       for usr in self.active_clients:
         if (usr[0]==id_user): 
-          data=[message.data[0],message.data[2],usr[3][1]]  #id, #address, #complete model
+          data=[message.data[0],usr[3][1]]  #id, #complete model
           self.send_message_to_cloud( data, "TLModel")
 #**********************************************************************#  
        
@@ -263,16 +263,18 @@ class Fog:
                  Find=True
                  if (message.subject=="LocalModel"):
                    self.receivedLocalModels+=1
+                   print(f'user {id}',message.domain,message.task )
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
+                   print(f'user {id}',self.active_clients[i][3][3], self.active_clients[i][3][4] )
                    if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
                      self.sendLocalModels()
                  elif (message.subject=="RequestTLModel"):
-               
-                   msg=[self.active_clients[i][0],self.active_clients[i][2],self.active_clients[i][3][3],self.active_clients[i][3][4]] #id, adress, domain, task
+                   print(self.active_clients[i][0],self.active_clients[i][2],message[0],message[1])
+                   msg=[self.active_clients[i][0],self.active_clients[i][2],message[0],message[1]] #id, adress, domain, task
                    self.send_message_to_cloud(msg,"RequestTLModel" )
                 except Exception as e:
                   print('Exception from listen_for_messages',e)
@@ -313,6 +315,7 @@ class Fog:
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
+                   print(f'model of client {str(id)}', len(message.personnalizedModel))
                    if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
                      self.sendLocalModels()
                  elif (message.subject=="RequestTLModel"):
@@ -343,9 +346,10 @@ class Fog:
 #**********************************************************************#
 
     def TransferModelToClient(self,message):
-      model=None
+      id_user=message[0]
+      model = message[1] 
       for usr in self.active_clients:
-        if (usr[0]==message.data[0]):  #id
+        if (usr[0]==id_user):  #id
           model =message.data[0] # the model and not wights
       
       self.send_message_to_cloud(model, "TLModel")
