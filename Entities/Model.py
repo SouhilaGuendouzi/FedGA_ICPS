@@ -74,6 +74,7 @@ class Model_A(nn.Module):
         super(Model_A, self).__init__()
         self.features=nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=5,padding=2),
+            #nn.BatchNorm2d(10),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(10, 24, kernel_size=5,padding=1), 
@@ -124,7 +125,7 @@ class Model_B(nn.Module):
         )
         self.classification = nn.Sequential(
             
-           nn.Flatten(),
+            nn.Flatten(),
             nn.Linear(12*4*4, 50),
             nn.ReLU(),
             nn.Linear(50, 100),
@@ -154,7 +155,7 @@ class  Model_C(nn.Module):
     def __init__(self):
         super(Model_C, self).__init__()
         self.features = nn.Sequential(
-             nn.Conv2d(1, 16, kernel_size=5),
+            nn.Conv2d(1, 16, kernel_size=5),
             #nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(2),
@@ -200,7 +201,7 @@ class  Model_D(nn.Module):
         )
 
         self.classification=nn.Sequential(
-             nn.Flatten(),
+            nn.Flatten(),
             nn.Linear(12*4*4, 50),
             nn.ReLU(),
             nn.Linear(50, 100),

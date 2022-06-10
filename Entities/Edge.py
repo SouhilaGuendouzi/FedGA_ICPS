@@ -12,8 +12,8 @@ class Edge(object):
          self.datasetTrain = datasetTrain
          self.datasetTest = datasetTest
          self.model=model
-         self.Trainaccuracy=None
-         self.Testaccuracy=None
+         self.Trainaccuracy=0
+         self.Testaccuracy=0
          self.loss=None
          self.args=args
 
@@ -112,7 +112,6 @@ class Edge(object):
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers
          self.previous_weights=self.model.state_dict()
-    
          self.weights.update(self.w)
          self.data = self.datasetTrain
          self.model.load_state_dict(self.weights)
@@ -144,7 +143,7 @@ class Edge(object):
             
             
          self.weights=copy.deepcopy(self.model.state_dict())  #fih koulchi
-         for i in range(10):
+         for i in range(11):
           try :
            
            del[self.weights['features.{}.weight'.format(i)]]
@@ -154,7 +153,8 @@ class Edge(object):
           except:
              print('')
          
-     
+          #self.Trainaccuracy , loss = self.test_img('train')
+          #self.Testaccuracy, loss =self.test_img('test')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 

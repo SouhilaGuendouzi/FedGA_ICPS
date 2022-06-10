@@ -24,9 +24,7 @@ class Cloud(object):
         self.accuracy_locals_train=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
         self.loss_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
         self.accuracy_locals_test=[[0 for _ in range(self.args.num_users)] for _ in range(self.args.epochs+1)]
-        
-       
-       
+              
         if self.args.all_clients: 
               print("Aggregation over all clients")
               self.weights_locals = [self.weights_global for i in range(args.num_users)]
@@ -100,7 +98,8 @@ class Cloud(object):
               self.weights_global = FedPerGA(initial_population,self.global_model.classification,self.dataset)
 
         if (self.args.aggr=='fedAVG'):
-             self.global_model.load_state_dict(self.weights_global)
+            print('hh')
+            #self.global_model.load_state_dict(self.weights_global)
         else :
 
             self.global_model.classification.load_state_dict(self.weights_global)
@@ -142,11 +141,13 @@ class Cloud(object):
                  w, loss =  self.clients_list[id].local_update(self.weights_global)
 
             acc, loss = self.clients_list[id].test_img('train')
+            #acc = self.clients_list[id].Trainaccuracy
             #print('loss {} and accuracy {}'.format(loss,acc))
             self.loss_locals_train[iter][id]=loss
             self.accuracy_locals_train[iter][id]=acc
             #print("Training accuracy for client {} is : {:.2f}".format(id,acc))
             acc, loss = self.clients_list[id].test_img('test')
+            #acc =self.clients_list[id].Testaccuracy
             self.loss_locals_test[iter][id]=loss
             self.accuracy_locals_test[iter][id]=acc
            # print("Testing accuracy for client {} is : {:.2f}".format(id,acc))

@@ -95,14 +95,3 @@ def loss_test (args, lossTest):
 
 
 
-def Plot_table(data,col):
-        
-      fig, ax =plt.subplots(1,1)
-      data=data
-      column_labels=col
-      ax.axis('tight')
-      ax.axis('off')
-      ax.table(cellText=data,colLabels=column_labels,loc="center")
-      plt.savefig('./tables/results')
-
-      plt.figure()

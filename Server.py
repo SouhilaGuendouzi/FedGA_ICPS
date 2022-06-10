@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     print(torch.cuda.is_available())
-    net_glob = Model_Fashion().to(args.device)
+    net_glob = Model_A().to(args.device)
 
     net_glob.train() 
     w=net_glob.state_dict()
@@ -42,14 +42,14 @@ if __name__ == '__main__':
  
 
     model_A=Model_A().to(args.device)
-    model_B=Model_B().to(args.device)
-    model_C=Model_C().to(args.device)
-    model_D=Model_D().to(args.device)
+    model_B=Model_A().to(args.device)
+    model_C=Model_A().to(args.device)
+    model_D=Model_A().to(args.device)
 
 
     dict_users[0] = Edge (0,model_A, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #A
-    dict_users[1] = Edge (1,model_B, mnist_non_iid_train_dls[1], mnist_non_iid_test_dls[1],args)    #B
-    dict_users[2] = Edge (2,model_C, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)     #C  
+    dict_users[1] = Edge (1,model_C, mnist_non_iid_train_dls[1], mnist_non_iid_test_dls[1],args)    #B
+    dict_users[2] = Edge (2,model_B, mnist_non_iid_train_dls[2],mnist_non_iid_test_dls[2],args)     #C  
     dict_users[3] = Edge (3,model_D, mnist_non_iid_train_dls[3],mnist_non_iid_test_dls[3],args)     #D
 
 
