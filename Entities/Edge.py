@@ -51,14 +51,14 @@ class Edge(object):
             self.loss=sum(batch_loss)/len(batch_loss)
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          for i in range(10):
-          try :
+           try :
            
-           del[self.weights['features.{}.weight'.format(i)]]
+            del[self.weights['features.{}.weight'.format(i)]]
       
-           del[self.weights['features.{}.bias'.format(i)]]
-
-          except:
-             print('')
+            del[self.weights['features.{}.bias'.format(i)]]
+ 
+           except:
+              print('')
             
          # Here ==> self.weights contains only classification layers (fully connected layers)
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i

@@ -91,6 +91,7 @@ class Edge(object):
                objectToSend.accuracy=self.accuracy
                objectToSend.domain=self.domain
                objectToSend.task=self.task
+               objectToSend.architecture=self.model
                message = objectToSend
 
              else:
@@ -140,6 +141,8 @@ class Edge(object):
                              threading.Thread(target=self.Updating, args=(message.data,False,)).start() 
 
                   elif  (message.subject=='TLModel'):
+                      self.add_message('I am receiving the model from my server ')
+                      print(message.data)
                       self.model=message.data #le model tout entier 
                       threading.Thread(target=self.Training, args=(False,)).start() #it returns the whole model
                   

@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     print(torch.cuda.is_available())
-    net_glob = Model_A().to(args.device)
+    net_glob = Model_D().to(args.device)
 
     net_glob.train() 
     w=net_glob.state_dict()
@@ -41,10 +41,10 @@ if __name__ == '__main__':
     dict_users={}
  
 
-    model_A=Model_A().to(args.device)
-    model_B=Model_A().to(args.device)
-    model_C=Model_A().to(args.device)
-    model_D=Model_A().to(args.device)
+    model_A=Model_D().to(args.device)
+    model_B=Model_D().to(args.device)
+    model_C=Model_D().to(args.device)
+    model_D=Model_D().to(args.device)
 
 
     dict_users[0] = Edge (0,model_A, mnist_non_iid_train_dls[0], mnist_non_iid_test_dls[0],args)    #A
@@ -68,10 +68,12 @@ if __name__ == '__main__':
     print('Cloud length',len(test[0]))
     cloud=Cloud(dict_users,net_glob,test[0],args)
 
+    
+
 
 ########################## Begin process #########################################################################################
 
-    accloss=[[0 for _ in range(len(dict_users))] for _ in range(2)]
+    accloss=[[0 for _ in range(len(dict_users)+1)] for _ in range(2)]
     for iter in range(args.epochs):
         
 
@@ -89,7 +91,7 @@ if __name__ == '__main__':
 
       net_glob=cloud.aggregate(weights_locals,args.aggr)
 
-    print("After Last Aggregation")
+    print("After Last Aggregation",f" Round  {iter+1}")
     weights_locals, loss_locals_train,loss_locals_test,accuracy_locals_train,accuracy_locals_test=cloud.Launch_local_updates(iter+1)
 
 
@@ -102,6 +104,8 @@ if __name__ == '__main__':
             aclo[0][i]=accuracy_locals_train[iter+1][i]
             aclo[1][i]=accuracy_locals_test[iter+1][i]
 
+    
+    
     row=aclo
     col=['Client {}'.format(j) for j in range(len(dict_users))]
     print(tabulate(row, headers=col, tablefmt="fancy_grid"))

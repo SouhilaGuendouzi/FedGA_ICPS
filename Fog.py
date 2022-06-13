@@ -17,8 +17,6 @@ class Fog:
     def __init__(self,args,HOST,HostCloud):
 
        
-
-
         self.HOST=HOST
         self.PORT=args.myport
         self.LISTENER_LIMIT=args.LISTENER_LIMIT
@@ -64,8 +62,8 @@ class Fog:
         self.Connect.pack(padx=100, pady=10, side=tk.LEFT)
         self.Start_FL = tk.Button(self.root, height = 2,
                  width = 20,
-                 text ="Start ",
-                 command = lambda:self.send_message_to_cloud("hello","TEst")
+                 text ="Upload",
+                 command = lambda:self.sendLocalModels()
                  )
         self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
     
@@ -129,6 +127,7 @@ class Fog:
                       self.send_messages_to_all(message.data, "FLEnd")
 
                   elif  (message.subject=='TLModel'):
+                      self.add_message('I am receiving TL model from the server')
                       self.TransferModelToClient(message.data)
 
                   elif  (message.subject=='RequestTLModel'):
@@ -165,7 +164,7 @@ class Fog:
       id_user=message.data[1]  #id
       for usr in self.active_clients:
         if (usr[0]==id_user): 
-          data=[message.data[0],usr[3][1]]  #id, #complete model
+          data=[message.data[0],usr[3][5]]  #idCible, #complete model architecture
           self.send_message_to_cloud( data, "TLModel")
 #**********************************************************************#  
        
@@ -191,7 +190,7 @@ class Fog:
                  if (self.active_clients[i][0]==id): ExistedClient=True
                  else : i=i+1
                if (ExistedClient==False):
-                 self.active_clients.append([id, client,address,[None,None,None,None,None]])  #username, adr, data object     
+                 self.active_clients.append([id, client,address,[None,None,None,None,None,None]])  #username, adr, data object     
                  print( "SERVER~" + f"Client {id} added to the System")
                  self.add_message(f"Client {id} added to the System \n")
                  
@@ -223,7 +222,6 @@ class Fog:
         threading.Thread(target=self.client_handler, args=(client,address)).start()
 
 #**********************************************************************# 
-
     def send_message_to_client(self,client, message,subject): 
           
           obj =Empty()
@@ -269,6 +267,7 @@ class Fog:
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
+                   self.active_clients[i][3][5]=message.architecture
                    print(f'user {id}',self.active_clients[i][3][3], self.active_clients[i][3][4] )
                    if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
                      self.sendLocalModels()
@@ -315,13 +314,15 @@ class Fog:
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
+                   self.active_clients[i][3][5]=message.architecture
                    print(f'model of client {str(id)}', len(message.personnalizedModel))
                    if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
                      self.sendLocalModels()
                  elif (message.subject=="RequestTLModel"):
-               
-                   msg=[self.active_clients[i][0],self.active_clients[i][2],self.active_clients[i][3][3],self.active_clients[i][3][4]] #id, adress, domain, task
+                   print(username, message.data[0],message.data[1])
+                   msg=[self.active_clients[i][0],self.active_clients[i][2],message.data[0],message.data[1]] #id, adress, domain, task
                    self.send_message_to_cloud(msg,"RequestTLModel" )
+                   self.add_message('I am requesting the server about TL model')
                 except Exception as e:
                   print('Exception from listen_for_messages',e)
               i=i+1
@@ -349,10 +350,11 @@ class Fog:
       id_user=message[0]
       model = message[1] 
       for usr in self.active_clients:
+        print (f'It is my client {usr[0]} and {id_user}')
         if (usr[0]==id_user):  #id
-          model =message.data[0] # the model and not wights
-      
-      self.send_message_to_cloud(model, "TLModel")
+          model = message[1]  # the model and not wights
+      self.add_message('I am sending the model to my client ')
+      self.send_message_to_client(usr[1],model, "TLModel")
 
 #**********************************************************************#
 

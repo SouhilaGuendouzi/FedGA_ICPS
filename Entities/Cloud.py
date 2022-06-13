@@ -41,6 +41,7 @@ class Cloud(object):
         self.i=0
         if (self.method_name=='fedAVG'):
               self.weights_global=FedAvg(self.weights_locals)
+              print('Global Length',len(self.weights_global))
         elif (self.method_name=='fedGA'):
              initial_population=self.weights_locals
         
@@ -166,6 +167,38 @@ class Cloud(object):
         return self.weights_locals, self.loss_locals_train, self.loss_locals_test,self.accuracy_locals_train,self.accuracy_locals_test
 
 
+
+
+
+
+
+    def Launch_local_updatesClassic(self,iter):
+        
+
+        for id in range(len(self.clients_list)):
+            
+            
+            w, loss =  self.clients_list[id].local_updateFirst()
+            acc, loss = self.clients_list[id].test_img('train')
+            #acc = self.clients_list[id].Trainaccuracy
+            #print('loss {} and accuracy {}'.format(loss,acc))
+            self.loss_locals_train[iter][id]=loss
+            self.accuracy_locals_train[iter][id]=acc
+            #print("Training accuracy for client {} is : {:.2f}".format(id,acc))
+            acc, loss = self.clients_list[id].test_img('test')
+            #acc =self.clients_list[id].Testaccuracy
+            self.loss_locals_test[iter][id]=loss
+            self.accuracy_locals_test[iter][id]=acc
+        
+
+            self.loss_locals.append(copy.deepcopy(loss))
+
+        loss_avg = sum(self.loss_locals) / len(self.loss_locals)
+        print('Round {:3d}, Average loss {:.3f}'.format(iter, loss_avg))
+        self.loss_train.append(loss_avg)
+
+        return self.weights_locals, self.loss_locals_train, self.loss_locals_test,self.accuracy_locals_train,self.accuracy_locals_test
+        
 
 
 

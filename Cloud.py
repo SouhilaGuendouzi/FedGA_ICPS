@@ -144,11 +144,11 @@ class Cloud:
 
 
                  elif (message.subject=="RequestTLModel"):
-                  print(message.data)
+                  #print(message.data)
                   threading.Thread(target= self.SearchANdRequestTlModel, args=(message.data,)).start()
                   
                  elif (message.subject=="TLModel"):
-                    print(message.data)
+                    #print(message.data)
                     threading.Thread(target=  self.TransferTLModelToFog, args=(message.data,)).start()
 
                   
@@ -193,16 +193,22 @@ class Cloud:
       model = message[1]   
       stop =False 
       i,j =0,0
+     
       while (i< len(self.active_fogs) and stop==False):
         j=0
         while (j< len(self.active_fogs[i][3]) and stop==False):
+          print(f'client{id_user} is {self.active_fogs[i][3][j][0]}')
           if (self.active_fogs[i][3][j][0]==id_user):
+            stop=True
             fogSocket=self.active_fogs[i][1]
             print('I am transferring the model')
             self.send_message_to_fog(fogSocket,message,"TLModel")
             stop=True
-          j+=j
-        i+=i
+          j+=1
+        i+=1
+      
+      print('on a trouvé ?', stop)
+      
 
 
 #*****************************************************************************************#  
