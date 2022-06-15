@@ -1,15 +1,22 @@
 # Import required modules
 
-#from utils.Empty import Empty
-from cmath import exp
+
 from queue import Empty
 import socket
 import threading
 import pickle
-from matplotlib.style import use
-import tkinter as tk
-from utils.FogOptions import args_parser
+import numpy as np
+import random
 import torch
+import time
+import tkinter as tk
+from Entities.Model import Model_Fashion
+from utils.FogOptions import args_parser
+from Aggregation.FedAVG import *
+from Aggregation.FedPer import *
+from Aggregation.FedPerGA import *
+from Aggregation.FedGA import *
+from utils.create_MNIST_datasets import get_FashionMNIST
 
 
 # Function to listen for upcoming messages from a client
@@ -19,25 +26,48 @@ class Fog:
        
         self.HOST=HOST
         self.PORT=args.myport
+        self.BackupPort=30303
         self.LISTENER_LIMIT=args.LISTENER_LIMIT
         self.HostCloud=HostCloud
         self.PortCloud=args.portCloud
 
-        self.active_clients = []
-        self.inputs = []
 
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.cloud=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.FLrounds=args.epochs
+
+
+
+        self.HostAggregator=HostCloud
+        self.PortAggregator=args.portCloud
+
+        self.active_clients = []
+        self.active_fogs=[]
+        self.numberFogsreceived=0
+       
+
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  #for clients
+        self.cloud=socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #for cloud
+        self.aggregatorSocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #for fog aggregator
+        self.serverForFogs =socket.socket(socket.AF_INET, socket.SOCK_STREAM) # to get Fogs connections
 
         self.receivedLocalModels=0
+
         self.Actuator="Free"
+        self.aggregator="Cloud"
+        self.aggregationMethod="fedAVG"
   
-        #self.scoring=0
-        #self.pyhical_attributes={}      
+        self.capacity=random.uniform(0,100) 
+        self.priority=random.uniform(0,100)    
 
         self.id=args.id
         self.args=args
+         
 
+        #****************** Aggregation **********************#
+        self.global_model=Model_Fashion()
+        train, test = get_FashionMNIST('iid',
+        n_samples_train =1500, n_samples_test=250, n_clients =4,  
+        batch_size =50, shuffle =True)
+        self.dataset=test[self.id]
 
         
         self.root =tk.Tk()
@@ -60,13 +90,21 @@ class Fog:
                  )
 
         self.Connect.pack(padx=100, pady=10, side=tk.LEFT)
-        self.Start_FL = tk.Button(self.root, height = 2,
+        self.Upload = tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Upload",
-                 command = lambda:self.sendLocalModels()
+                 command = lambda:self.sendLocalModels("Cloud")
                  )
-        self.Start_FL.pack(padx=5, pady=20, side=tk.LEFT)
-    
+        self.Upload.pack(padx=5, pady=20, side=tk.LEFT)
+        
+       
+        self.Start = tk.Button(self.root, height = 2,
+                 width = 20,
+                 text ="Start FL",
+                 command = self.start_FL)
+             
+         
+        self.Start.pack(padx=5, pady=20, side=tk.LEFT)
         try:
           self.server.bind((self.HOST, self.PORT))
           print(f"Running the server on {self.HOST} {self.PORT}")
@@ -76,10 +114,208 @@ class Fog:
            print(f"Unable to bind to host {self.HOST} and port {self.PortCloud}")
            self.add_message(f"Unable to bind to host {self.HOST} and port {self.PortCloud} \n")
     
+
+#*************************Aggregator setup *************************#
+
+    def connect_to_aggregator(self,adr,port):
+       Var= False
+   
+       try:
+           self.aggregatorSocket.connect((adr, port))
+           self.add_message(f"Successfully connected to Aggregator server {adr}:{port}\n")
+           self.send_message_to_aggregator(self.id,'Connection')
+           Var= True
+
+       except Exception as e:
+        print(e)
+        
     
+       threading.Thread(target=self.listen_for_messages_from_aggregator, args=(self.aggregatorSocket, )).start()
     
+       return Var
+   
     
-#***********Cloud Setup*****************************************#
+    def listen_for_messages_from_aggregator(self,socket):
+
+       while 1:
+         
+        message = socket.recv(1000000)#.decode('utf-8')
+        message=pickle.loads(message)
+        if message != '':
+           try:
+             
+                  self.add_message('Aggregator Server is requesting For: '+message.subject+"\n")
+                
+                  if (message.subject=='FLstart'):
+                     self.receivedLocalModels=0
+
+                     self.send_messages_to_all(message.data, "FLstart")
+
+                  elif  (message.subject=='FL'):
+                      self.receivedLocalModels=0
+                      self.add_message('Cloud server is requesting for an Other  FL Round \n')
+                      self.send_messages_to_all(message.data, "FL")
+                  elif  (message.subject=='FLEnd'):
+                      
+                      self.add_message('Cloud server Compeleted  the Last FL Round \n')
+                      self.send_messages_to_all(message.data, "FLEnd")
+                      self.sendLocalModels("Cloud")
+
+                  else :
+                       self.add_message(message.subject+"\n")
+
+             
+           except Exception as e: 
+                print('Error from listen_for_messages_from_server', e)       
+        else:
+            print("Error", "Message recevied from Server is empty")
+  
+
+    def send_message_to_aggregator(self,message,subject):
+       try :
+        if message != '':
+                  objectToSend=Empty()
+                  objectToSend.data=message
+                  objectToSend.subject=subject
+                  message=objectToSend
+                  message = pickle.dumps(message)
+                  self.aggregatorSocket.send(message)
+                  print('message sent to cloud server')                
+        else:    
+           print("Empty message", "Message cannot be empty")
+       except Exception as e : 
+           print(e)
+
+
+ #***********Foge Setup*****************************************#
+    def receive_fogs(self):
+
+      
+       while 1:
+        try :
+          fog, address = self.serverForFogs.accept()
+          print(fog,address)
+          threading.Thread(target=self.Fog_handler, args=(fog, address)).start()
+        except Exception as e :
+          print("Expecttttttttttt",e)
+
+#*****************************************************************************************# 
+    def Fog_handler(self,fog,address):  
+
+  
+      while 1:
+          existedFog=False
+          i=0
+          msg= fog.recv(1000000)#.decode('utf-8')
+          msg=pickle.loads(msg)
+          id=msg.data
+          print(id)
+          if str(id) != '':
+            while (i<len(self.active_fogs) and existedFog==False):
+               if (self.active_fogs[i][0]==id): existedFog=True
+               else: i=i+1
+            if (existedFog==False):
+               self.active_fogs.append([id, fog,address, [],None,None])  #id, socket, address, (list of ==> [idEdge,address,accuracy,persoModel,domain,task])
+               print( "" + f" Fog {id} added to the System")
+               self.add_message(f"Fog {id} added to the System \n")
+               #self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
+               break
+            else:
+               self.active_fogs[i][1]= fog
+               self.active_fogs[i][2]=address
+  
+               print( "" + f" Fog {id} reconnected to the System")
+               self.add_message(f"Fog {id}  reconnected to the System \n")
+          else:
+            print("Fog username is empty")
+     
+      threading.Thread(target=self.listen_for_messages_from_fog, args=(fog, id, )).start() 
+
+#*****************************************************************************************#
+    def send_message_to_fog(self,fog,message,subject):
+       try :
+   
+        if message != '':
+           obj= Empty()
+           obj.data=message
+           obj.subject=subject
+           message=obj
+           message = pickle.dumps(message)
+           fog.send(message)
+      
+        else:
+           print("Empty message", "Message cannot be empty")
+       except Exception as e : 
+           print(e)
+#*****************************************************************************************#
+    def send_messages_to_all_fogs(self,message,subject):  
+    
+       for user in self.active_fogs:
+
+          self.send_message_to_fog(user[1], message,subject)
+#*****************************************************************************************#
+    def listen_for_messages_from_fog(self,fog, id):
+    
+      while 1:
+        
+        message = fog.recv(1000000)#.decode('utf-8')
+        message=pickle.loads(message)
+        i=0
+        Find=False
+        
+        if message != '':
+          self.add_message(' Message received From Fog'+ str(id)+' About '+message.subject  + ' \n')
+
+          while (i<len(self.active_fogs) and Find==False):
+              username="Fog "+str(id)
+              if (self.active_fogs[i][0]==id): ### search about Fog
+                
+                try:
+                 Find=True
+                 print(message.subject)
+                 if (message.subject=="LocalModels"):
+                    
+                    self.numberFogsreceived+=1
+  
+                    self.active_fogs[i][3]=message.data[0]   #list of edge nodes 
+                    self.active_fogs[i][4]=message.data[1]   #capacity 
+                    self.active_fogs[i][5]=message.data[2]   #priority
+
+                    
+                    #threading.Thread(target=#, args=()).start()
+                
+                    self.FLAggregation()
+
+
+                 elif (message.subject=="RequestTLModel"):
+                  #print(message.data)
+                  threading.Thread(target= self.SearchANdRequestTlModel, args=(message.data,)).start()
+                  
+                 elif (message.subject=="TLModel"):
+                    #print(message.data)
+                    threading.Thread(target=  self.TransferTLModelToFog, args=(message.data,)).start()
+
+                 elif (message.subject=="Election"):
+                    self.numberFogsreceived+=1
+                    self.active_fogs[i][4]=message.data[0]   #capacity 
+                    self.active_fogs[i][5]=message.data[1]   #priority
+
+                    threading.Thread(target=  self.Elect, args=()).start()
+
+                except Exception as e:
+                  print('Exception from listen_for_messages',e)
+              i=i+1
+          self.send_message_to_fog(fog,"FOG  ~~ Successful Demand Received ","ACK")
+
+
+        else:
+            print(f"The message send from Fog {username} is empty")
+#*****************************************************************************************#   
+
+  
+
+
+#*********************************Cloud Setup******************#
 
 
     def connect(self):
@@ -88,7 +324,8 @@ class Fog:
        try:
            self.cloud.connect((self.HostCloud, self.PortCloud))
            self.add_message("Successfully connected to Cloud server \n")
-           self.send_message_to_cloud(self.id,'Connection')
+           data=[self.id,self.BackupPort]
+           self.send_message_to_cloud(data,'Connection')
            Var= True
 
        except Exception as e:
@@ -113,7 +350,7 @@ class Fog:
                 
                   if (message.subject=='FLstart'):
                      self.receivedLocalModels=0
-                     self.Actuator="FL"
+                     
                      
                      self.send_messages_to_all(message.data, "FLstart")
 
@@ -122,16 +359,58 @@ class Fog:
                       self.add_message('Cloud server is requesting for an Other  FL Round \n')
                       self.send_messages_to_all(message.data, "FL")
                   elif  (message.subject=='FLEnd'):
-                      self.Actuator="Free"
+                      
                       self.add_message('Cloud server Compeleted  the Last FL Round \n')
                       self.send_messages_to_all(message.data, "FLEnd")
 
                   elif  (message.subject=='TLModel'):
-                      self.add_message('I am receiving TL model from the server')
+                      self.add_message('I am receiving TL model from the server \n')
                       self.TransferModelToClient(message.data)
 
                   elif  (message.subject=='RequestTLModel'):
                       self.TransferModelToCloud(message)
+                  elif (message.subject=='Election'):
+                        self.capacity=random.uniform(0,100) 
+                        data=[self.capacity, self.priority]
+                        self.send_message_to_cloud(data,'Election')
+                  elif (message.subject=='ElectedAggregator'):
+                        self.Actuator="Aggregator"
+                        self.aggregator="Me"
+                        self.aggregationMethod=message.data
+                        try:
+                            self.serverForFogs.bind((self.HOST, self.BackupPort))
+                            print(f"Running as aggregator server on {self.HOST} {self.BackupPort}")
+                            self.serverForFogs.listen(self.LISTENER_LIMIT)
+                            self.add_message(f"Running as aggregator server on {self.HOST} {self.BackupPort} \n")
+                            threading.Thread(target=fog.receive_fogs, args=()).start()
+                        except Exception as e:
+                            print(f"Unable to bind to host {self.HOST} and port {self.BackupPort}", e)
+                            self.add_message(f"Unable to bind to host {self.HOST} and port {self.BackupPort} \n")
+                  elif (message.subject=="Aggregator"):
+                       address=message.data[0]
+                       port=message.data[1]
+
+                       print(f'mu new aggregator is  {address} and   {port}')
+                     
+
+                       if (address!=self.HostCloud or port!= self.PortCloud) : # dans le cas ou un autre fog est selectionné comme aggregateur
+                        
+                        print('before sleeping')
+                        
+                        time.sleep(10)
+
+                        print('after sleeping')
+
+                        self.aggregator="Fog"
+
+                        self.connect_to_aggregator(address,port)
+
+                       else :
+
+                          print('The aggregator is always the Cloud')
+
+
+
                   else :
                        self.add_message(message.subject+"\n")
 
@@ -269,8 +548,8 @@ class Fog:
                    self.active_clients[i][3][4]=message.task
                    self.active_clients[i][3][5]=message.architecture
                    print(f'user {id}',self.active_clients[i][3][3], self.active_clients[i][3][4] )
-                   if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
-                     self.sendLocalModels()
+                   if (self.receivedLocalModels==len(self.active_clients) ):
+                     self.sendLocalModels(self.aggregator)
                  elif (message.subject=="RequestTLModel"):
                    print(self.active_clients[i][0],self.active_clients[i][2],message[0],message[1])
                    msg=[self.active_clients[i][0],self.active_clients[i][2],message[0],message[1]] #id, adress, domain, task
@@ -316,13 +595,13 @@ class Fog:
                    self.active_clients[i][3][4]=message.task
                    self.active_clients[i][3][5]=message.architecture
                    print(f'model of client {str(id)}', len(message.personnalizedModel))
-                   if (self.receivedLocalModels==len(self.active_clients) ): #and self.Actuator=="FL"
-                     self.sendLocalModels()
+                   if (self.receivedLocalModels==len(self.active_clients) ): 
+                     self.sendLocalModels(self.aggregator)
                  elif (message.subject=="RequestTLModel"):
                    print(username, message.data[0],message.data[1])
                    msg=[self.active_clients[i][0],self.active_clients[i][2],message.data[0],message.data[1]] #id, adress, domain, task
                    self.send_message_to_cloud(msg,"RequestTLModel" )
-                   self.add_message('I am requesting the server about TL model')
+                   self.add_message('I am requesting the server about TL model \n')
                 except Exception as e:
                   print('Exception from listen_for_messages',e)
               i=i+1
@@ -334,14 +613,16 @@ class Fog:
 
 #**********************************************************************#
 
-    def sendLocalModels(self):
+    def sendLocalModels(self,qui):
       list= []
       
       for usr in self.active_clients:
         avgAccuracy=(usr[3][2][0]+usr[3][2][1])/2
         list.append([usr[0],usr[2],avgAccuracy,usr[3][0],usr[3][3],usr[3][4]]) #id, address, accuracy, Personnalized Model, domain, task
-      
-      self.send_message_to_cloud(list,"LocalModels")
+      data=[list, self.capacity, self.priority]
+      if (qui=="Cloud"):
+        self.send_message_to_cloud(data,"LocalModels")
+      else: self.send_message_to_aggregator(data,"LocalModels")
   
 
 #**********************************************************************#
@@ -353,12 +634,111 @@ class Fog:
         print (f'It is my client {usr[0]} and {id_user}')
         if (usr[0]==id_user):  #id
           model = message[1]  # the model and not wights
-      self.add_message('I am sending the model to my client ')
+      self.add_message('I am sending the model to my client \n ')
       self.send_message_to_client(usr[1],model, "TLModel")
 
 #**********************************************************************#
 
-   
+  #*****************************************************************************************# 
+
+    def start_FL(self):
+
+        self.FLrounds=self.args.epochs
+        self.numberFogsreceived=0
+        self.add_message("Starting FL \n")
+        self.send_messages_to_all_fogs(self.aggregationMethod,"FLstart")
+
+       
+            
+#*****************************************************************************************# 
+    def FLAggregation(self):
+       print(f"{self.numberFogsreceived} and  {self.active_fogs}")
+       if (self.numberFogsreceived==len(self.active_fogs)):
+        
+         self.FLrounds-=1
+         self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
+         local_weights=[]
+         for fog in self.active_fogs:          
+              for usr in fog[3]:       
+                local_weights.append(usr[3]) #local models weights
+         self.aggregate(local_weights,self.aggregationMethod)
+  
+         if (self.FLrounds==0):
+            self.send_messages_to_all_fogs(self.weights_global,"FLEnd")
+            self.add_message("Sending Last Global Model \n")
+            self.numberFogsreceived=0    
+            
+         
+         else : self.send_messages_to_all_fogs(self.weights_global,"FL")
+         self.numberFogsreceived=0          
+
+
+#*****************************************************************************************# 
+
+    def aggregate(self,weights_clients,method_name):
+        self.method_name=method_name
+        self.weights_locals=weights_clients
+        #edge = random.randint(0, len(self.active_clients)-1)
+        #self.global_model=self.active_clients[edge][3][1] #the complete model
+       
+        self.i=0
+        if (self.method_name=='FedAVG'):
+              self.weights_global=FedAvg(self.weights_locals)
+        elif (self.method_name=='FedGA'):
+             initial_population=self.weights_locals
+        
+             for d in self.weights_locals: # for each user
+                weight=[]
+                if isinstance(d, dict):
+                     for x in d.items():                    #get weights of each layer
+                         array = np.array(x[1], dtype='f')  #1 is a tensor
+                         array= array.flatten()
+                         weight= np.concatenate((weight, array), axis=0)
+                         initial_population[ self.i]= np.array(weight,dtype='f')
+
+                self.i= self.i+1                            #next weight vector (user)
+             self.weights_global = FedGA(initial_population,self.global_model,self.dataset)
+
+        elif (self.method_name=='FedPer'):
+
+             self.weights_global=FedPer(self.weights_locals, self.global_model)
+
+        elif (self.method_name=='FedPerGA'):
+            
+              initial_population=self.weights_locals #machi kamline
+              for d in self.weights_locals: # for each user
+       
+                weight=[]
+                if isinstance(d, dict):
+                  try:
+                     for x in d.items():  #get weights of each layer
+                         array = np.array(x[1], dtype='f')#1 is a tensor
+                         array= array.flatten()
+                         weight= np.concatenate((weight, array), axis=0)
+                         initial_population[ self.i]= np.array(weight,dtype='f')
+
+                  except:
+                      
+                      for x in d.items():  #get weights of each layer                                       
+                         array = np.array(x[1].cpu(), dtype='f')#1 is a tensor           
+                         array= array.flatten()      
+                         weight= np.concatenate((weight, array), axis=0)
+                         initial_population[ self.i]= np.array(weight,dtype='f')
+                self.i= self.i+1 # next weight vector (user)
+              
+              
+              self.weights_global = FedPerGA(initial_population,self.global_model.classification,self.dataset)
+
+        if (self.args.aggr=='FedAVG'):
+             self.global_model.load_state_dict(self.weights_global)
+        else :
+
+            self.global_model.classification.load_state_dict(self.weights_global)
+
+        return self.global_model
+
+
+#*****************************************************************************************#    
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ import threading
 import pickle
 import tkinter as tk
 from queue import Empty
+from turtle import onclick
 
 from Entities.Model import *
 from utils.EdgeOptions import args_parser
@@ -115,9 +116,10 @@ class Edge(object):
 
 #*****************************************************************************************#
      def add_message(self,message):
-       inputtxt.config(state=tk.NORMAL)
-       inputtxt.insert(tk.END, message )#+ '\n'
-       inputtxt.config(state=tk.DISABLED)
+        print(message)
+       #inputtxt.config(state=tk.NORMAL)
+       #inputtxt.insert(tk.END, message )#+ '\n'
+       #inputtxt.config(state=tk.DISABLED)
 
 #*****************************************************************************************#
      def listen_for_messages_from_server(self,socket):
@@ -183,44 +185,49 @@ class Edge(object):
 
 #*****************************************************************************************#
      def main(self):
-        global inputtxt 
-        l = tk.Label(text = "Client {}".format(self.id))
-        l.pack()
-        inputtxt = tk.Text(root, height = 25,
-                width = 60,
-                bg = "light yellow")
+   
+       st.markdown(f"# Edge {args.id}")
+       st.sidebar.markdown(f"# Edge {args.id}")
+       st.sidebar.write(f"Ip Address: LocalHost")
+       st.sidebar.write(f"Domain: {edge.domain}")
+       st.sidebar.write(f"Task: {edge.task}")
+       st.sidebar.write(f"Train Accuracy: {edge.accuracy[0]}")
+       st.sidebar.write(f"Test Accuracy: {edge.accuracy[1]}")
+       col1, col2 = st.columns(2)
 
-        inputtxt.pack()
-        inputtxt.configure(state='disabled')
-        Connect =tk.Button(root, height = 2,
-                 width = 20,
-                 text ="Connect",
-                 command=self.connect
-                 )
+       with col2:
+         st.button(label='Connect', on_click=self.connect)
 
-        Connect.pack(padx=50, pady=10, side=tk.LEFT)
+         st.button(label='Train',on_click=self.Training(False))
 
+         st.button(label="Upload", on_click=self.send_message(self.model.state_dict(),'LocalModel'))
 
-        Train = tk.Button(root, height = 2,
-                 width = 20,
-                 text ="Train",
-                 command = lambda:self.Training(False)
-                 )
-        Train.pack( padx=50,pady=20, side=tk.LEFT)
-        Upload = tk.Button(root, height = 2,
-                 width = 20,
-                 text ="Upload",
-                 command = lambda:self.send_message(self.model.state_dict(),'LocalModel')
-                 )
-        Upload.pack(padx=5, pady=20, side=tk.LEFT)
-        TLRequest = tk.Button(root, height = 2,
-                 width = 20,
-                 text ="Request For Model",
-                 command = lambda:self.TransferLearningRequest()
-                 )
-        TLRequest.pack(padx=5, pady=20, side=tk.LEFT)
-        root.mainloop()
+         st.button(label="Request for Model", on_click=self.TransferLearningRequest())
+       with col1:
+          txt = st.text_area('Output', '''
+     It was the best of times, it was the worst of times, it was  the age of wisdom, it was the age of foolishness, it was
+     the epoch of belief, it was the epoch of incredulity, it
+     was the season of Light, it was the season of Darkness, it
+     was the spring of hope, it was the winter of despair, (...)
+          It was the best of times, it was the worst of times, it was  the age of wisdom, it was the age of foolishness, it was
+     the epoch of belief, it was the epoch of incredulity, it
+     was the season of Light, it was the season of Darkness, it
+     was the spring of hope, it was the winter of despair, (...)
+          It was the best of times, it was the worst of times, it was  the age of wisdom, it was the age of foolishness, it was
+     the epoch of belief, it was the epoch of incredulity, it
+     was the season of Light, it was the season of Darkness, it
+     was the spring of hope, it was the winter of despair, (...)
+          It was the best of times, it was the worst of times, it was  the age of wisdom, it was the age of foolishness, it was
+     the epoch of belief, it was the epoch of incredulity, it
+     was the season of Light, it was the season of Darkness, it
+     was the spring of hope, it was the winter of despair, (...)
+          It was the best of times, it was the worst of times, it was  the age of wisdom, it was the age of foolishness, it was
+     the epoch of belief, it was the epoch of incredulity, it
+     was the season of Light, it was the season of Darkness, it
+     was the spring of hope, it was the winter of despair, (...)
+     ''',height=500, disabled=True)
 
+   
 
 
 #### Learning Processes
@@ -499,8 +506,6 @@ if __name__ == '__main__':
     elif (args.model=='D'):
         model= Model_D()
     edge =Edge(model=model,dataset=dataset,args=args)
-    st.markdown(f"# Edge {args.id}")
-    st.sidebar.markdown(f"# Edge {args.id}")
    
    
     edge.main()

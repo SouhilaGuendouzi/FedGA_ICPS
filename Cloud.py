@@ -7,6 +7,7 @@ import pickle
 import tkinter as tk
 from utils.CloudOptions import args_parser
 import torch
+import random
 from utils.Empty import Empty
 from Aggregation.FedAVG import *
 from Aggregation.FedPer import *
@@ -31,6 +32,7 @@ class Cloud:
         self.PORT=args.myport
         self.LISTENER_LIMIT=args.LISTENER_LIMIT
         self.active_fogs = []
+        self.numberFL=0
         self.numberFogsreceived=0
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # IPv4 addresses, TCP
         self.server.setblocking(True)
@@ -51,8 +53,10 @@ class Cloud:
         self.Actuator=False
       
         
-        self.scoring=0
-        self.pyhical_attributes={}      
+        self.capacity=99
+        self.priority=99    
+
+        self.aggregatorSocket=self.server
         
        
 
@@ -136,7 +140,10 @@ class Cloud:
                     
                     self.numberFogsreceived+=1
   
-                    self.active_fogs[i][3]=message.data
+                    self.active_fogs[i][3]=message.data[0]   #list of edge nodes 
+                    self.active_fogs[i][4]=message.data[1]   #capacity 
+                    self.active_fogs[i][5]=message.data[2]   #priority
+
                     
                     #threading.Thread(target=#, args=()).start()
                     self.registryUpdate()
@@ -151,7 +158,13 @@ class Cloud:
                     #print(message.data)
                     threading.Thread(target=  self.TransferTLModelToFog, args=(message.data,)).start()
 
-                  
+                 elif (message.subject=="Election"):
+                    self.numberFogsreceived+=1
+                    self.active_fogs[i][4]=message.data[0]   #capacity 
+                    self.active_fogs[i][5]=message.data[1]   #priority
+
+                    threading.Thread(target=  self.Elect, args=()).start()
+
                 except Exception as e:
                   print('Exception from listen_for_messages',e)
               i=i+1
@@ -220,14 +233,15 @@ class Cloud:
           i=0
           msg= fog.recv(1000000)#.decode('utf-8')
           msg=pickle.loads(msg)
-          id=msg.data
+          id=msg.data[0]
+          backupPort=msg.data[1]
           print(id)
           if str(id) != '':
             while (i<len(self.active_fogs) and existedFog==False):
                if (self.active_fogs[i][0]==id): existedFog=True
                else: i=i+1
             if (existedFog==False):
-               self.active_fogs.append([id, fog,address, []])  #id, socket, address, (list of ==> [idEdge,address,accuracy,persoModel,domain,task])
+               self.active_fogs.append([id, fog,address, [],None,None,backupPort])  #id, socket, address, (list of ==> [idEdge,address,accuracy,persoModel,domain,task]),capacity, priority backup port
                print( "" + f" Fog {id} added to the System")
                self.add_message(f"Fog {id} added to the System \n")
                #self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
@@ -287,11 +301,17 @@ class Cloud:
 #*****************************************************************************************# 
 
     def start_FL(self):
-      self.FLrounds=self.args.epochs
-      self.numberFogsreceived=0
-      self.add_message("Starting FL \n")
-      self.send_messages_to_all(self.args.aggr,"FLstart")
-    
+      self.numberFL+=1
+      if (self.numberFL!=1):
+         self.send_messages_to_all(None,"Election")
+      else :
+        self.FLrounds=self.args.epochs
+        self.numberFogsreceived=0
+        self.add_message("Starting FL \n")
+        self.send_messages_to_all(self.args.aggr,"FLstart")
+
+       
+            
 #*****************************************************************************************# 
     def FLAggregation(self):
       
@@ -311,7 +331,7 @@ class Cloud:
          if (self.FLrounds==0):
             self.send_messages_to_all(self.weights_global,"FLEnd")
             self.numberFogsreceived=0    
-            self.add_message("Sending Last Global Model ")
+            self.add_message("Sending Last Global Model \n")
          
          else : self.send_messages_to_all(self.weights_global,"FL")
          self.numberFogsreceived=0          
@@ -382,6 +402,46 @@ class Cloud:
 
 #*****************************************************************************************# 
 
+
+    def Elect(self):
+       
+       if (self.numberFogsreceived==len(self.active_fogs)):
+        self.capacity=random.uniform(0,100) 
+        print(f'My capacity {self.capacity} and {self.priority}')
+        capacity=self.capacity
+        priority= self.priority
+        iden= [self.HOST,self.PORT,-1]
+        for fog in self.active_fogs:
+          print(f'Fog {fog[0]} has a capacity of {fog[4]} and {fog[5]}')
+          if ((capacity< fog[4]) or ( (capacity== fog[4]) and (priority< fog[5])) ):
+
+            self.aggregatorSocket=fog[1]
+            capacity=fog[4]
+            priority=fog[5]
+            iden= [fog[2][0],fog[6],fog[0]] #address, portBakcup, id 
+            print(f'the elected node is :{iden} ')
+
+        if (self.aggregatorSocket==self.server):
+            self.FLrounds=self.args.epochs
+            self.numberFogsreceived=0
+            self.add_message("Starting FL \n")
+            self.send_messages_to_all(self.args.aggr,"FLstart")
+        else :
+          self.send_message_to_fog( self.aggregatorSocket,args.aggr,'ElectedAggregator')
+          self.send_messages_to_all( iden,"Aggregator")
+        self.numberFogsreceived=0
+
+      
+
+
+    
+         
+         
+      
+
+
+
+#*****************************************************************************************# 
     def main(self):
 
         self.root.mainloop()
