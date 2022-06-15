@@ -313,11 +313,7 @@ class Fog:
 #*****************************************************************************************#   
 
   
-
-
 #*********************************Cloud Setup******************#
-
-
     def connect(self):
        Var= False
    
@@ -646,6 +642,7 @@ class Fog:
         self.FLrounds=self.args.epochs
         self.numberFogsreceived=0
         self.add_message("Starting FL \n")
+        self.send_messages_to_all(self.aggregationMethod,"FLstart")
         self.send_messages_to_all_fogs(self.aggregationMethod,"FLstart")
 
        
@@ -653,23 +650,34 @@ class Fog:
 #*****************************************************************************************# 
     def FLAggregation(self):
        print(f"{self.numberFogsreceived} and  {self.active_fogs}")
+       total =self.numberFogsreceived+ 
        if (self.numberFogsreceived==len(self.active_fogs)):
         
          self.FLrounds-=1
          self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
          local_weights=[]
          for fog in self.active_fogs:          
-              for usr in fog[3]:       
-                local_weights.append(usr[3]) #local models weights
+              for usr in fog[3]:   
+                if (self.method_name=='FedAVG'):    
+                   local_weights.append(usr[4]) #local models weights
+                else :
+                  local_weights.append(usr[3])
+         for usr in self.active_clients:
+            if (self.method_name=='FedAVG'):
+              local_weights.append(usr[3][1])
+            else : local_weights.append(usr[3][0])
          self.aggregate(local_weights,self.aggregationMethod)
   
          if (self.FLrounds==0):
             self.send_messages_to_all_fogs(self.weights_global,"FLEnd")
+            self.send_messages_to_all(self.weights_global,"FLEnd")
             self.add_message("Sending Last Global Model \n")
             self.numberFogsreceived=0    
             
          
-         else : self.send_messages_to_all_fogs(self.weights_global,"FL")
+         else :
+           self.send_messages_to_all_fogs(self.weights_global,"FL")
+           self.send_messages_to_all(self.weights_global,"FL")
          self.numberFogsreceived=0          
 
 
@@ -729,7 +737,7 @@ class Fog:
               
               self.weights_global = FedPerGA(initial_population,self.global_model.classification,self.dataset)
 
-        if (self.args.aggr=='FedAVG'):
+        if (self.method_name=='FedAVG'):
              self.global_model.load_state_dict(self.weights_global)
         else :
 
@@ -739,7 +747,6 @@ class Fog:
 
 
 #*****************************************************************************************#    
-
 
 if __name__ == '__main__':
 
