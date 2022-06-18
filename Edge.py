@@ -137,10 +137,10 @@ class Edge(object):
                   elif  (message.subject=='FL'):
                              self.add_message('Fog server is requesting for an Other  FL Round \n')
                     
-                             threading.Thread(target=self.Updating, args=(message.data,True,)).start() #message.data is personnalized weights
+                             threading.Thread(target=self.Updating, args=(message.data,True,"NotFinal")).start() #message.data is personnalized weights
                   elif  (message.subject=='FLEnd'):
                              self.add_message('Fog server Compeleted  the Last FL Round \n')
-                             threading.Thread(target=self.Updating, args=(message.data,False,)).start() 
+                             threading.Thread(target=self.Updating, args=(message.data,False,"Final")).start() 
 
                   elif  (message.subject=='TLModel'):
                       self.add_message('I am receiving the model from my server ')
@@ -169,12 +169,12 @@ class Edge(object):
               threading.Thread(target=self.local_train_FedAVG, args=(Request,)).start() #it returns the whole model
 
 
-     def Updating(self,data,Request):
+     def Updating(self,data,Request,statut):
 
          if (self.aggregationmethod=='FedAVG'):
-              threading.Thread(target=self.local_update_FedAVG, args=(data,Request,)).start() #it returns the whole model
+              threading.Thread(target=self.local_update_FedAVG, args=(data,Request,statut)).start() #it returns the whole model
          else: 
-              threading.Thread(target=self.local_update_Other, args=(data,Request,)).start() #it returns the whole model
+              threading.Thread(target=self.local_update_Other, args=(data,Request,statut)).start() #it returns the whole model
         
      def TransferLearningRequest(self):
         message=[self.domain,self.task]
@@ -316,7 +316,7 @@ class Edge(object):
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 #*****************************************************************************************#
-     def local_update_FedAVG(self,weights_global,Request):   #with the global layers weights in case of FedAVG, with similar models
+     def local_update_FedAVG(self,weights_global,Request,statut):   #with the global layers weights in case of FedAVG, with similar models
          self.add_message('Updating .')
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
@@ -360,11 +360,12 @@ class Edge(object):
          self.add_message('Accuracy Test   \t'+str(acc)+"\n")    
          self.weightsJustforReturn=self.weights
          if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
+         if(statut=="Final") : self.send_message(self.weightsJustforReturn,'FinalLocalModel')
          return  self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 
  #*****************************************************************************************#       
-     def local_update_Other(self,weights_global,Request): #with the global personnalized layers weights in case of FedPer, FedGa ..
+     def local_update_Other(self,weights_global,Request,statut): #with the global personnalized layers weights in case of FedPer, FedGa ..
          self.add_message('Updating .')
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
@@ -418,6 +419,7 @@ class Edge(object):
          self.weightsJustforReturn=self.weights
          print(len( self.weightsJustforReturn))
          if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
+         if(statut=="Final") : self.send_message(self.weightsJustforReturn,'FinalLocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
 #*****************************************************************************************#

@@ -139,7 +139,7 @@ class Cloud:
                  if (message.subject=="LocalModels"):
                     
                     self.numberFogsreceived+=1
-  
+                    print("LocalModels from ", username)
                     self.active_fogs[i][3]=message.data[0]   #list of edge nodes 
                     self.active_fogs[i][4]=message.data[1]   #capacity 
                     self.active_fogs[i][5]=message.data[2]   #priority
@@ -258,7 +258,8 @@ class Cloud:
       threading.Thread(target=self.listen_for_messages_from_fog, args=(fog, id, )).start()
 #*****************************************************************************************# 
     def registryUpdate(self):
-      if ( self.numberFogsreceived==len(self.active_fogs)):
+      if (self.numberFogsreceived==len(self.active_fogs)):
+
           #print('Registry !!!!!!!!!',self.registry[0])
           print('registry update')
           if (len(self.registry)==0):
@@ -302,11 +303,14 @@ class Cloud:
 
     def start_FL(self):
       self.numberFL+=1
+      self.numberFogsreceived=0
+      
       if (self.numberFL!=1):
+
          self.send_messages_to_all(None,"Election")
       else :
         self.FLrounds=self.args.epochs
-        self.numberFogsreceived=0
+        #self.numberFogsreceived=0
         self.add_message("Starting FL \n")
         self.send_messages_to_all(self.args.aggr,"FLstart")
 
@@ -314,20 +318,18 @@ class Cloud:
             
 #*****************************************************************************************# 
     def FLAggregation(self):
-      
+       print(self.numberFogsreceived,len(self.active_fogs),'HHHHHHHHHHHHH' )
        if ( self.numberFogsreceived==len(self.active_fogs)):
         
          self.FLrounds-=1
          self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
          local_weights=[]
          for fog in self.active_fogs:
-              #print(f'Fog {fog[0]}')
               for usr in fog[3]:
-                #print(f'user {usr[0]}') 
                 local_weights.append(usr[3]) #local models weights
 
          self.aggregate(local_weights,self.args.aggr)
-         #print(self.weights_global)
+         self.numberFogsreceived=0
          if (self.FLrounds==0):
             self.send_messages_to_all(self.weights_global,"FLEnd")
             self.numberFogsreceived=0    
@@ -397,6 +399,8 @@ class Cloud:
 
             self.global_model.classification.load_state_dict(self.weights_global)
 
+        self.numberFogsreceived=0
+
         return self.global_model
 
 
@@ -404,7 +408,7 @@ class Cloud:
 
 
     def Elect(self):
-       
+       print(self.numberFogsreceived,'Aliki chhal kayan man fog')
        if (self.numberFogsreceived==len(self.active_fogs)):
         self.capacity=random.uniform(0,100) 
         print(f'My capacity {self.capacity} and {self.priority}')
@@ -423,24 +427,17 @@ class Cloud:
 
         if (self.aggregatorSocket==self.server):
             self.FLrounds=self.args.epochs
-            self.numberFogsreceived=0
             self.add_message("Starting FL \n")
             self.send_messages_to_all(self.args.aggr,"FLstart")
         else :
           self.send_message_to_fog( self.aggregatorSocket,args.aggr,'ElectedAggregator')
-          self.send_messages_to_all( iden,"Aggregator")
+          for user in self.active_fogs:
+            if (user[1]!=self.aggregatorSocket):
+             self.send_message_to_fog(user[1],iden,"Aggregator")
+         
         self.numberFogsreceived=0
 
-      
-
-
-    
-         
-         
-      
-
-
-
+        
 #*****************************************************************************************# 
     def main(self):
 
