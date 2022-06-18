@@ -17,9 +17,9 @@ from Aggregation.FedAVG import *
 from Aggregation.FedPer import *
 from Aggregation.FedPerGA import *
 from Aggregation.FedGA import *
+from utils.Plot import loss_test
 from utils.create_MNIST_datasets import get_FashionMNIST
-
-
+from utils.Graph import Plot_Graphes_for_fog
 # Function to listen for upcoming messages from a client
 class Fog:
     def __init__(self,args,HOST,HostCloud):
@@ -32,7 +32,7 @@ class Fog:
         self.HostCloud=HostCloud
         self.PortCloud=args.portCloud
 
-
+        
         self.FLrounds=args.epochs
 
 
@@ -53,13 +53,22 @@ class Fog:
 
         self.Actuator="Free"
         self.aggregator="Cloud"
-        self.method_name="fedAVG"
+        self.method_name="FedAVG"
  
         self.capacity=random.uniform(0,100) 
         self.priority=random.uniform(0,100)    
 
         self.id=args.id
         self.args=args
+
+        self.accuracy_locals_train=[]
+        self.accuracy_locals_test=[]
+        self.loss_locals_train=[]
+        self.loss_locals_test=[]
+        self.roundGraphes=0
+
+
+       
          
 
         #****************** Aggregation **********************#
@@ -148,13 +157,16 @@ class Fog:
                 
                   if (message.subject=='FLstart'):
                      self.receivedLocalModels=0
+              
                      self.send_messages_to_all(message.data, "FLstart")
 
                   elif  (message.subject=='FL'):
+                   
                       self.receivedLocalModels=0
                       self.add_message('Cloud server is requesting for an Other  FL Round \n')
                       self.send_messages_to_all(message.data, "FL")
                   elif  (message.subject=='FLEnd'):
+                     
                       self.receivedLocalModels=0
                       self.add_message('Cloud server Compeleted  the Last FL Round \n')
                       self.send_messages_to_all(message.data, "FLEnd")
@@ -399,7 +411,7 @@ class Fog:
                             print(f"Running as aggregator server on {self.HOST} {self.BackupPort}")
                             self.serverForFogs.listen(self.LISTENER_LIMIT)
                             self.add_message(f"Running as aggregator server on {self.HOST} {self.BackupPort} \n")
-                            threading.Thread(target=fog.receive_fogs, args=()).start()
+                            threading.Thread(target=self.fog.receive_fogs, args=()).start()
                         except Exception as e:
                             print(f"Running as aggregator server on {self.HOST} {self.BackupPort}")
                             self.add_message(f"Running as aggregator server on {self.HOST} {self.BackupPort} \n")
@@ -480,15 +492,17 @@ class Fog:
           i=0
           msg = client.recv(1000000)#.decode('utf-8')
           msg=pickle.loads(msg)
+          id=msg.id
+
           try :
-            id=msg.data
-          
-            if str(id) != '':
+            subject= msg.subject
+            if (subject=="Connection"):
+              if str(id) != '':
                while(i<len(self.active_clients) and  ExistedClient==False ):
                  if (self.active_clients[i][0]==id): ExistedClient=True
                  else : i=i+1
                if (ExistedClient==False):
-                 self.active_clients.append([id, client,address,[None,None,None,None,None,None]])  #username, adr, data object     
+                 self.active_clients.append([id, client,address,[None,None,None,None,None,None,None]])  #username, adr, data object     
                  print( "SERVER~" + f"Client {id} added to the System")
                  self.add_message(f"Client {id} added to the System \n")
                  
@@ -499,8 +513,22 @@ class Fog:
                  print( "SERVER~" + f"Client {id} is reconnected to the System")
                  self.add_message(f"Client {id} reconnected to the System \n")
               
-            else:
-              print("Client username is empty")
+              else:
+               print("Client username is empty")
+            elif (subject=='RequestTLModel'):
+               stop = False
+               i =0
+               while(i< len(self.active_clients) and stop== False):
+                if (client==self.active_clients[i][1]):
+                   stop=True
+                   msg=[self.active_clients[i][0],self.active_clients[i][2],msg.data[0],msg.data[1]] #id, adress, domain, task
+                i+=1
+
+               if (stop==True):  self.send_message_to_cloud(msg,"RequestTLModel" )
+
+            else: self.check_for_message_from_client(client,msg)
+
+              
           except Exception as e: 
              print('checking as edge',msg)
              threading.Thread(target=self.check_for_message_from_client, args=(client, msg, )).start()
@@ -560,14 +588,33 @@ class Fog:
                  Find=True
                  if (message.subject=="LocalModel"):
                    self.receivedLocalModels+=1
-                   #print(f'user {id}',message.domain,message.task )
+                   print("choufi souhila from edge", username,self.receivedLocalModels)
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
                    self.active_clients[i][3][5]=message.architecture
-                   #print(f'user {id}',self.active_clients[i][3][3], self.active_clients[i][3][4] )
+                   self.active_clients[i][3][6]=message.loss
+                   if (self.aggregator=="Me"): self.FLAggregation()
+                   if (self.receivedLocalModels==len(self.active_clients)): 
+                     self.sendLocalModels(self.aggregator)
+                 elif (message.subject=="FinalLocalModel"):
+                  
+                   self.receivedLocalModels+=1
+                   print('hello', self.receivedLocalModels)
+                   self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
+                   self.active_clients[i][3][1]=message.completeModel
+                   self.active_clients[i][3][2]=message.accuracy
+                   self.active_clients[i][3][3]=message.domain
+                   self.active_clients[i][3][4]=message.task
+                   self.active_clients[i][3][5]=message.architecture
+                   self.accuracy_locals_test.append(message.measures[1])
+                   self.accuracy_locals_train.append(message.measures[0])
+                   self.loss_locals_test.append(message.measures[3])
+                   self.loss_locals_train.append(message.measures[2])
+
+                   self.display()
                    if (self.receivedLocalModels==len(self.active_clients) ):
                     if (self.aggregator!="Me"):   self.sendLocalModels(self.aggregator)
                  elif (message.subject=="RequestTLModel"):
@@ -615,17 +662,28 @@ class Fog:
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
                    self.active_clients[i][3][5]=message.architecture
+                   self.active_clients[i][3][6]=message.loss
                    if (self.aggregator=="Me"): self.FLAggregation()
                    if (self.receivedLocalModels==len(self.active_clients)): 
                      self.sendLocalModels(self.aggregator)
                  elif (message.subject=="FinalLocalModel"):
-                   self.receivedLocalModels=0
+
+                   self.receivedLocalModels+=1
+                   print('hello', self.receivedLocalModels)
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
                    self.active_clients[i][3][3]=message.domain
                    self.active_clients[i][3][4]=message.task
                    self.active_clients[i][3][5]=message.architecture
+                   self.accuracy_locals_test.append(message.measures[1])
+                   self.accuracy_locals_train.append(message.measures[0])
+                   self.loss_locals_test.append(message.measures[3])
+                   self.loss_locals_train.append(message.measures[2])
+
+                   self.display()
+
+              
                  elif (message.subject=="RequestTLModel"):
                    print(username, message.data[0],message.data[1])
                    msg=[self.active_clients[i][0],self.active_clients[i][2],message.data[0],message.data[1]] #id, adress, domain, task
@@ -647,6 +705,8 @@ class Fog:
       
       for usr in self.active_clients:
         avgAccuracy=(usr[3][2][0]+usr[3][2][1])/2
+        #[usr[3][2][0],usr[3][2][1]]
+        #
         list.append([usr[0],usr[2],avgAccuracy,usr[3][0],usr[3][3],usr[3][4]]) #id, address, accuracy, Personnalized Model, domain, task
       data=[list, self.capacity, self.priority]
       if (qui=="Cloud"):
@@ -787,8 +847,17 @@ class Fog:
         return self.global_model
 
 
-#*****************************************************************************************#    
-
+#*****************************************************************************************#   
+    def display(self):
+       if (self.receivedLocalModels==len(self.active_clients)):
+        Plot_Graphes_for_fog(self.id,len(self.accuracy_locals_train),len(self.active_clients),self.accuracy_locals_train,self.accuracy_locals_test,self.loss_locals_train,self.loss_locals_test)
+        self.accuracy_locals_train=[]
+        self.accuracy_locals_test=[]
+        self.loss_locals_train=[]
+        self.loss_locals_test=[]
+        self.receivedLocalModels=0
+        
+   
 if __name__ == '__main__':
 
     args = args_parser()   # ajoute id 

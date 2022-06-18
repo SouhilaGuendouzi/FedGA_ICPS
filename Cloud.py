@@ -47,6 +47,7 @@ class Cloud:
         self.localmodels=[]
         self.FLrounds=args.epochs
         self.aggregation=args.aggr
+        self.aggregator="Me"
         self.weights_global=[]
         
           
@@ -263,12 +264,12 @@ class Cloud:
           #print('Registry !!!!!!!!!',self.registry[0])
           print('registry update')
           if (len(self.registry)==0):
-            print(self.active_fogs[0][3][0][0])
-            print(self.active_fogs[0][1])
-            print(self.active_fogs[0][3][0][1])
-            print(self.active_fogs[0][3][0][2])
-            print(self.active_fogs[0][3][0][4])
-            print(self.active_fogs[0][3][0][5])
+            #print(self.active_fogs[0][3][0][0])
+            #print(self.active_fogs[0][1])
+            #print(self.active_fogs[0][3][0][1])
+            #print(self.active_fogs[0][3][0][2])
+            #print(self.active_fogs[0][3][0][4])
+            #print(self.active_fogs[0][3][0][5])
             self.registry.append([self.active_fogs[0][3][0][0],self.active_fogs[0][1],self.active_fogs[0][3][0][1],self.active_fogs[0][3][0][2],self.active_fogs[0][3][0][4],self.active_fogs[0][3][0][5]]) #idedge,socketFog, addressEdge, avgaccuracy,domain , task
           #print(len(self.active_fogs[0][3]),len(self.active_fogs[0][3]))
           for fog in self.active_fogs:
@@ -280,6 +281,7 @@ class Cloud:
                 while (i< len(self.registry) and stop==False):
                   #print(f'user{usr[0]} comparing with user {[self.registry[i][0]]} ',usr[4],self.registry[i][4],usr[5],self.registry[i][5], usr[2],self.registry[i][3])
                   #print(usr[4]==self.registry[i][3] , usr[5]==self.registry[i][4])
+                
                   if (usr[4]==self.registry[i][4] and usr[4]==self.registry[i][4] and usr[2]>self.registry[i][3] ): #same domain and task but accuracy >>
                     #print(f'Replace {fog  [0]},{usr[0]}')
                     stop=True
@@ -306,7 +308,6 @@ class Cloud:
       self.numberFogsreceived=0
       
       if (self.numberFL!=1):
-
          self.send_messages_to_all(None,"Election")
       else :
         self.FLrounds=self.args.epochs
@@ -408,12 +409,13 @@ class Cloud:
 
 
     def Elect(self):
-       print(self.numberFogsreceived,'Aliki chhal kayan man fog')
+       
        if (self.numberFogsreceived==len(self.active_fogs)):
         self.capacity=random.uniform(0,100) 
         print(f'My capacity {self.capacity} and {self.priority}')
         capacity=self.capacity
         priority= self.priority
+        self.aggregatorSocket=self.server
         iden= [self.HOST,self.PORT,-1]
         for fog in self.active_fogs:
           print(f'Fog {fog[0]} has a capacity of {fog[4]} and {fog[5]}')
@@ -423,16 +425,19 @@ class Cloud:
             capacity=fog[4]
             priority=fog[5]
             iden= [fog[2][0],fog[6],fog[0]] #address, portBakcup, id 
-            print(f'the elected node is :{iden} ')
+            
 
         if (self.aggregatorSocket==self.server):
+            self.aggregator="Me"
             self.FLrounds=self.args.epochs
             self.add_message("Starting FL \n")
             self.send_messages_to_all(self.args.aggr,"FLstart")
         else :
+          self.aggregator="Fog"
           self.send_message_to_fog( self.aggregatorSocket,args.aggr,'ElectedAggregator')
           for user in self.active_fogs:
             if (user[1]!=self.aggregatorSocket):
+             print(f'the elected node is :{iden} ')
              self.send_message_to_fog(user[1],iden,"Aggregator")
          
         self.numberFogsreceived=0

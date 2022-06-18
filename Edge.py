@@ -40,6 +40,7 @@ class Edge(object):
          self.GlobalModelWeghts=copy.deepcopy(model.state_dict())
          self.weightsJustforReturn=copy.deepcopy(model.state_dict())
          self.accuracy=[None,None]
+         self.lossTable= [None, None]
          self.loss=None
          self.domain=args.domain
          self.task=args.task
@@ -52,6 +53,13 @@ class Edge(object):
               self.model.cuda()
 
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+         self.accuracy_locals_train=[]
+         self.accuracy_locals_test=[]
+         self.loss_locals_train=[]
+         self.loss_locals_test=[]
+         self.roundGraphes=0
 
         
         
@@ -83,29 +91,42 @@ class Edge(object):
      def send_message(self,message,subject):
        try :
         if message != '':
-           try:
-             if isinstance(message, dict):  #on a fait dict pour le cas des vecteurs de poids
-               objectToSend=Empty()
+            objectToSend=Empty()
+            if (subject =='Connection'):
+                objectToSend.id=self.id
+                objectToSend.subject=subject
+                message = objectToSend
+            elif (subject=='LocalModel'):
                objectToSend.id=self.id
                objectToSend.subject=subject
                objectToSend.completeModel=copy.deepcopy(self.model.state_dict())
                objectToSend.personnalizedModel=message
                objectToSend.accuracy=self.accuracy
+               objectToSend.loss=self.lossTable
                objectToSend.domain=self.domain
                objectToSend.task=self.task
                objectToSend.architecture=self.model
                message = objectToSend
-
-             else:
-                  objectToSend=Empty()
-                  objectToSend.data=message
-                  objectToSend.subject=subject
-                  message=objectToSend
+            elif (subject=="FinalLocalModel"):
+               objectToSend.id=self.id
+               objectToSend.subject=subject
+               objectToSend.completeModel=copy.deepcopy(self.model.state_dict())
+               objectToSend.personnalizedModel=message
+               objectToSend.accuracy=self.accuracy
+               objectToSend.loss=self.lossTable
+               objectToSend.domain=self.domain
+               objectToSend.task=self.task
+               objectToSend.architecture=self.model
+               objectToSend.measures= [self.accuracy_locals_train,self.accuracy_locals_test,self.loss_locals_train,self.loss_locals_test]
+               message = objectToSend
+            elif (subject=="RequestTLModel"):
+               objectToSend.id=self.id
+               objectToSend.data=message
+               objectToSend.subject=subject
+               message=objectToSend
                
-           except Exception as e:
-                 print(e)
-           message = pickle.dumps(message)
-           self.socket.send(message)
+            message = pickle.dumps(message)
+            self.socket.send(message)
       
         else:
            print("Empty message", "Message cannot be empty")
@@ -130,15 +151,19 @@ class Edge(object):
             try:
                   self.add_message('Fog Server is requesting For: '+message.subject+"\n")
                   if (message.subject=='FLstart'):
+                     self.roundGraphes+=1
                      self.add_message('Fog server is requesting for starting FL \n')
                      self.aggregationmethod=message.data
                      threading.Thread(target=self.Training, args=(True,)).start() #it returns the whole model
+                     
 
                   elif  (message.subject=='FL'):
+                             self.roundGraphes+=1
                              self.add_message('Fog server is requesting for an Other  FL Round \n')
                     
                              threading.Thread(target=self.Updating, args=(message.data,True,"NotFinal")).start() #message.data is personnalized weights
                   elif  (message.subject=='FLEnd'):
+                             self.roundGraphes+=1
                              self.add_message('Fog server Compeleted  the Last FL Round \n')
                              threading.Thread(target=self.Updating, args=(message.data,False,"Final")).start() 
 
@@ -258,10 +283,14 @@ class Edge(object):
          self.add_message("Testing")
          acc, loss= self.test_img('train')
          self.add_message('Accuracy Train  \t'+str(acc)+"\n")
-         acc, loss= self.test_img('test')
-         self.add_message('Accuracy Test   \t'+str(acc)+"\n")  
+         accT, lossT= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(accT)+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
+             self.accuracy_locals_train.append(acc)
+             self.accuracy_locals_test.append(accT)
+             self.loss_locals_train.append(loss)
+             self.loss_locals_test.append(lossT)
              self.send_message(self.weightsJustforReturn,'LocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 #*****************************************************************************************#
@@ -306,11 +335,14 @@ class Edge(object):
          self.add_message("Testing")
          acc, loss= self.test_img('train')
          self.add_message('Accuracy Train  \t'+str(acc)+"\n")
-         acc, loss= self.test_img('test')
-         self.add_message('Accuracy Test   \t'+str(acc)+"\n")   
-         # Here ==> self.weights contains only classification layers (fully connected layers)
+         accT, lossT= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(accT)+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
+             self.accuracy_locals_train.append(acc)
+             self.accuracy_locals_test.append(accT)
+             self.loss_locals_train.append(loss)
+             self.loss_locals_test.append(lossT)
              self.send_message(self.weightsJustforReturn,'LocalModel')
          print(len( self.weightsJustforReturn))
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
@@ -356,10 +388,15 @@ class Edge(object):
          self.add_message("Testing")
          acc, loss= self.test_img('train')
          self.add_message('Accuracy Train  \t'+str(acc)+"\n")
-         acc, loss= self.test_img('test')
-         self.add_message('Accuracy Test   \t'+str(acc)+"\n")    
+         accT, lossT= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(accT)+"\n")  
          self.weightsJustforReturn=self.weights
-         if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
+         if (Request==True):
+             self.accuracy_locals_train.append(acc)
+             self.accuracy_locals_test.append(accT)
+             self.loss_locals_train.append(loss)
+             self.loss_locals_test.append(lossT)
+             self.send_message(self.weightsJustforReturn,'LocalModel')
          if(statut=="Final") : self.send_message(self.weightsJustforReturn,'FinalLocalModel')
          return  self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
@@ -414,11 +451,15 @@ class Edge(object):
          self.add_message("Testing")
          acc, loss= self.test_img('train')
          self.add_message('Accuracy Train  \t'+str(acc)+"\n")
-         acc, loss= self.test_img('test')
-         self.add_message('Accuracy Test   \t'+str(acc)+"\n")  
+         accT, lossT= self.test_img('test')
+         self.add_message('Accuracy Test   \t'+str(accT)+"\n")  
          self.weightsJustforReturn=self.weights
-         print(len( self.weightsJustforReturn))
-         if (Request==True): self.send_message(self.weightsJustforReturn,'LocalModel')
+         if (Request==True):
+             self.accuracy_locals_train.append(acc)
+             self.accuracy_locals_test.append(accT)
+             self.loss_locals_train.append(loss)
+             self.loss_locals_test.append(lossT)
+             self.send_message(self.weightsJustforReturn,'LocalModel')
          if(statut=="Final") : self.send_message(self.weightsJustforReturn,'FinalLocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
@@ -462,8 +503,10 @@ class Edge(object):
        
         self.add_message('. \n')   
         if (datasetName=='test'):
+           self.lossTable[0]=test_loss
            self.accuracy[0]=accuracy
         elif (datasetName=='train'):
+            self.lossTable[1]=test_loss
             self.accuracy[1]=accuracy   
         return accuracy, test_loss
 
