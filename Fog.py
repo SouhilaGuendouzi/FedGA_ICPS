@@ -27,6 +27,7 @@ class Fog:
        
         self.HOST=HOST
         self.PORT=args.myport
+        self.adr=args.myadr
         self.BackupPort=30303
         self.LISTENER_LIMIT=args.LISTENER_LIMIT
         self.HostCloud=HostCloud
