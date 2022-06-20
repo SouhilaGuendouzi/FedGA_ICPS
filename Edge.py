@@ -16,20 +16,20 @@ import torch
 from torch import import_ir_module, nn
 import copy
 from torch.utils.data import DataLoader
-
+import toml
 import streamlit as st
 from streamlit.scriptrunner.script_run_context import get_script_run_ctx
+import pandas as pd
+import numpy as np
 from PIL import Image
-
+import time
 HOST = '127.0.0.1'
 PORT = 12346
 
 global i
 i=0
 
-root =tk.Tk()
-root.geometry("1000x600")
-root.title(" Client Interface ") 
+
 
 
 class Edge(object):
@@ -64,9 +64,9 @@ class Edge(object):
          self.roundGraphes=0
 
 
-         self.text=""
-         st.session_state["text_area"]='ss'
-         st.session_state["socket"]=socket
+         self.text="\n"
+         #st.session_state["text_area"]='ss'
+         #st.session_state["socket"]=socket
 
         
         
@@ -92,9 +92,9 @@ class Edge(object):
         print("Unable to connect to server", f"Unable to connect to server {HOST} {self.portFog}")
         self.text+="Unable to connect to server"+f"Unable to connect to server {HOST} {self.portFog} \n"
         
-    
-       threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
        get_script_run_ctx()
+       threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
+       
     
        #return Var
 
@@ -149,12 +149,14 @@ class Edge(object):
 #*****************************************************************************************#
      def add_message(self,message):
        self.text=self.text+message
+       #text_area.text_area('Output', value=st.session_state.edge.text,height=500, disabled=True)
+       #st.write(self.text)
       
 
        #st.session_state["text_area"]=self.text
-       #inputtxt.config(state=tk.NORMAL)
-       #inputtxt.insert(tk.END, message )#+ '\n'
-       #inputtxt.config(state=tk.DISABLED)
+       inputtxt.config(state=tk.NORMAL)
+       inputtxt.insert(tk.END, message )#+ '\n'
+       inputtxt.config(state=tk.DISABLED)
 
 #*****************************************************************************************#
      def listen_for_messages_from_server(self,socket):
@@ -203,6 +205,7 @@ class Edge(object):
             print("Error", "Message recevied from Server is empty")
 #*****************************************************************************************#
      def Training(self,Request):
+         get_script_run_ctx()
          if (Request==True):
              self.add_message('Starting FedGA-ICPS \n')
              if (self.aggregationmethod=='FedAVG'):
@@ -210,6 +213,7 @@ class Edge(object):
                get_script_run_ctx()
                t.start() #it returns the whole model
              else :
+                get_script_run_ctx()
                 threading.Thread(target=self.local_train_Other, args=(Request,)).start() #it returns the whole model
          else :
                t= threading.Thread(target=self.local_train_FedAVG, args=(Request,))
@@ -234,11 +238,15 @@ class Edge(object):
 #*****************************************************************************************#
      def main(self):
         global inputtxt 
-        l = tk.Label(text = "Client {}".format(self.id))
-        l.pack()
+        root =tk.Tk()
+        root.geometry("1000x600")
+        root.configure(bg='white')
+        root.title(" Client {} Interface ".format(self.id)) 
+        l = tk.Label(text = "Client {}".format(self.id),font=("Helvetica", 18))
+        l.pack(padx=5, pady=10)
         inputtxt = tk.Text(root, height = 25,
                 width = 60,
-                bg = "light yellow")
+                )#bg = "light yellow"
 
         inputtxt.pack()
         inputtxt.configure(state='disabled')
@@ -248,7 +256,7 @@ class Edge(object):
                  command=self.connect
                  )
 
-        Connect.pack(padx=50, pady=10, side=tk.LEFT)
+        Connect.pack(padx=50, pady=20, side=tk.LEFT)
 
 
         Train = tk.Button(root, height = 2,
@@ -262,7 +270,7 @@ class Edge(object):
                  text ="Upload",
                  command = lambda:self.send_message(self.model.state_dict(),'LocalModel')
                  )
-        Upload.pack(padx=5, pady=20, side=tk.LEFT)
+        Upload.pack(padx=50, pady=20, side=tk.LEFT)
         TLRequest = tk.Button(root, height = 2,
                  width = 20,
                  text ="Request For Model",
@@ -528,55 +536,77 @@ class Edge(object):
        
         self.add_message('. \n')   
         if (datasetName=='test'):
-           self.lossTable[0]=test_loss
-           self.accuracy[0]=accuracy
+           self.lossTable[0]=round(test_loss,2)
+           self.accuracy[0]=round(accuracy,2)
         elif (datasetName=='train'):
-            self.lossTable[1]=test_loss
-            self.accuracy[1]=accuracy   
+            self.lossTable[1]=round(test_loss,2)
+            self.accuracy[1]=round(accuracy,2)
         return accuracy, test_loss
 
-     def ui(self,a):
-
-        if 'text_area' not in st.session_state:
-           st.session_state.text_area = "hi"
-      
-        st.markdown(f"# Edge {args.id} ")
-        image = Image.open('pictures/LOGO.png')
-
-        st.sidebar.image(image)
-        st.sidebar.markdown(f"# Edge {args.id}")
-        st.sidebar.write(f"Ip Address: {HOST}")
-        st.sidebar.write(f"Domain: {edge.domain}")
-        st.sidebar.write(f"Task: {edge.task}")
-        st.sidebar.write(f"Train Accuracy: {edge.accuracy[0]}")
-        st.sidebar.write(f"Test Accuracy: {edge.accuracy[1]}")
-
-       
-
-        col1, col2 = st.columns([4,1])
-
-        with col2:
-         connect=st.button(label='Connect')
-         if connect:
-            edge.connect()
-
-
-         train=st.button(label='Train')
-         if train:
-          
-          edge.Training(False)
-
-         upload = st.button(label="Upload")
-         if upload :
-            edge.send_message(edge.model.state_dict(),'LocalModel')
-
-         request=st.button(label="Request for Model")
-         if request:
-            edge.TransferLearningRequest()
-        with col1:
+     def ui(self, t):
    
+       if 'edge' not in st.session_state:	st.session_state.edge = edge
+
+    #t=threading.Thread(target=edge.ui, args=("hi", ))
+       get_script_run_ctx()
+    #t.start()
       
-          st.text_area('Output', value=st.session_state.text_area,height=500, disabled=True)
+       if 'text_area' not in st.session_state:
+           st.session_state.text_area = " "
+      
+       st.markdown(f"# Edge {self.id} ")
+       image = Image.open('pictures/logoa.png')
+      
+       st.sidebar.image(image)
+       st.sidebar.markdown(f"# Edge {st.session_state.edge.id}")
+
+    
+       st.sidebar.write(f"Ip Address: {HOST}")
+       st.sidebar.write(f"Domain: {st.session_state.edge.domain}")
+       st.sidebar.write(f"Task: {edge.task}")
+       st.sidebar.write(f"Train Accuracy: {st.session_state.edge.accuracy[0]}")
+       st.sidebar.write(f"Test Accuracy: {st.session_state.edge.accuracy[1]}")
+    
+       col1, col2, col3, col4 = st.sidebar.columns(4)
+       with col1:
+        connect=st.sidebar.button(label='Connect',key='connect')
+       with col2:
+         train=st.sidebar.button(label='Train',key='Train')
+       with col3:
+        upload = st.sidebar.button(label="Upload",key="Upload")
+       with col4:
+         request=st.sidebar.button(label="Request for Model",key="Request for Model")
+    #with col2:
+       if connect:
+            #st.session_state.text_area="souhila"
+            st.session_state.edge.connect()
+         
+       if train:
+          #print(st.session_state.text_area)
+          
+          st.session_state.edge.Training(False)
+
+        
+       elif upload :
+            st.session_state.edge.send_message(edge.model.state_dict(),'LocalModel')
+
+     
+       if request:
+             st.session_state.edge.TransferLearningRequest()
+         
+    
+    
+
+       st.text_area('Output', value=st.session_state.edge.text,height=500, disabled=True)
+     #st.write(st.session_state.edge.text)
+       chart_data = pd.DataFrame(
+     np.random.randn(20, 3),
+      columns=['a', 'b', 'c'])
+
+       st.line_chart(chart_data, width=500,height=500) 
+
+     
+    
 
 #*****************************************************************************************#
 if __name__ == '__main__':
@@ -612,69 +642,10 @@ if __name__ == '__main__':
     elif (args.model=='D'):
         model= Model_D()
     edge =Edge(model=model,dataset=dataset,args=args)
-    if 'edge' not in st.session_state:	st.session_state.edge = edge
-
-    #t=threading.Thread(target=edge.ui, args=("hi", ))
-    get_script_run_ctx()
-    #t.start()
-    if 'count' not in st.session_state:	st.session_state.count = 0
-           
-
-# Create a button which will increment the counter
-    increment = st.button('Increment')
-    if increment:
-       st.session_state.count += 1
-
-# A button to decrement the counter
-    decrement = st.button('Decrement')
-    if decrement:
-      st.session_state.count -= 1
- 
-    st.write('Count = ', st.session_state.edge.id)
-
-    if 'text_area' not in st.session_state:
-           st.session_state.text_area = "hi"
-      
-    st.markdown(f"# Edge {args.id} ")
-    image = Image.open('pictures/LOGO.png')
-
-    st.sidebar.image(image)
-    st.sidebar.markdown(f"# Edge {st.session_state.edge.id}")
-    st.sidebar.write(f"Ip Address: {HOST}")
-    st.sidebar.write(f"Domain: {st.session_state.edge.domain}")
-    st.sidebar.write(f"Task: {edge.task}")
-    st.sidebar.write(f"Train Accuracy: {st.session_state.edge.accuracy[0]}")
-    st.sidebar.write(f"Test Accuracy: {st.session_state.edge.accuracy[1]}")
-
-       
-
-    col1, col2 = st.columns([4,1])
-
-    with col2:
-         
-         train=st.button(label='Train')
-         connect=st.button(label='Connect')
-         upload = st.button(label="Upload")
-         if connect:
-            #st.session_state.text_area="souhila"
-            st.session_state.edge.connect()
-         
-         if train:
-          #print(st.session_state.text_area)
-          
-          st.session_state.edge.Training(False)
-
-        
-         elif upload :
-            st.session_state.edge.send_message(edge.model.state_dict(),'LocalModel')
-
-         request=st.button(label="Request for Model")
-         if request:
-            st.session_state.edge.TransferLearningRequest()
-    with col1:
+    edge.main()
+    #edge.ui(1)
    
-      
-          st.text_area('Output', value=st.session_state.edge.text,height=500, disabled=True)
+    
 
    
     

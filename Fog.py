@@ -412,7 +412,7 @@ class Fog:
                             print(f"Running as aggregator server on {self.HOST} {self.BackupPort}")
                             self.serverForFogs.listen(self.LISTENER_LIMIT)
                             self.add_message(f"Running as aggregator server on {self.HOST} {self.BackupPort} \n")
-                            threading.Thread(target=self.fog.receive_fogs, args=()).start()
+                            threading.Thread(target=self.receive_fogs, args=()).start()
                         except Exception as e:
                             print(f"Running as aggregator server on {self.HOST} {self.BackupPort}")
                             self.add_message(f"Running as aggregator server on {self.HOST} {self.BackupPort} \n")
@@ -615,7 +615,7 @@ class Fog:
                    self.loss_locals_test.append(message.measures[3])
                    self.loss_locals_train.append(message.measures[2])
 
-                   self.display()
+                   #self.display()
                    if (self.receivedLocalModels==len(self.active_clients) ):
                     if (self.aggregator!="Me"):   self.sendLocalModels(self.aggregator)
                  elif (message.subject=="RequestTLModel"):
@@ -682,7 +682,7 @@ class Fog:
                    self.loss_locals_test.append(message.measures[3])
                    self.loss_locals_train.append(message.measures[2])
 
-                   self.display()
+                   #self.display()
 
               
                  elif (message.subject=="RequestTLModel"):

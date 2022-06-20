@@ -321,7 +321,7 @@ class Cloud:
     def FLAggregation(self):
        print(self.numberFogsreceived,len(self.active_fogs),'HHHHHHHHHHHHH' )
        if ( self.numberFogsreceived==len(self.active_fogs)):
-        
+         
          self.FLrounds-=1
          self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
          local_weights=[]
@@ -345,6 +345,7 @@ class Cloud:
     def aggregate(self,weights_clients,method_name):
         self.method_name=method_name
         self.weights_locals=weights_clients
+        print('begin')
 
 
         self.i=0
@@ -401,7 +402,7 @@ class Cloud:
             self.global_model.classification.load_state_dict(self.weights_global)
 
         self.numberFogsreceived=0
-
+        print('end')
         return self.global_model
 
 
