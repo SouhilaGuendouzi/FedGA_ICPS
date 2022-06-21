@@ -20,6 +20,9 @@ from Aggregation.FedGA import *
 from utils.Plot import loss_test
 from utils.create_MNIST_datasets import get_FashionMNIST
 from utils.Graph import Plot_Graphes_for_fog
+from PIL import Image, ImageTk
+
+import tkinter.font as tkFont
 # Function to listen for upcoming messages from a client
 class Fog:
     def __init__(self,args,HOST,HostCloud):
@@ -56,8 +59,8 @@ class Fog:
         self.aggregator="Cloud"
         self.method_name="FedAVG"
  
-        self.capacity=random.uniform(0,100) 
-        self.priority=random.uniform(0,100)    
+        self.capacity=int(random.uniform(0,100))
+        self.priority=args.priority    
 
         self.id=args.id
         self.args=args
@@ -81,40 +84,84 @@ class Fog:
 
         
         self.root =tk.Tk()
-        self.root.geometry("600x600")
-        self.root.title(" Fog Interface ") 
-        self.l = tk.Label(text = f"Fog Server {self.id} ")
-        self.l.pack()
-        self.inputtxt = tk.Text(self.root, height = 25,
-                width = 60,
-                bg = "light yellow")
+        self.root.configure(bg='#092C42')
+        self.root.geometry("900x800") 
+        self.root.title("Fog {} ".format(self.id)) 
+        self.root.iconphoto(False, tk.PhotoImage(file='pictures/industry.png'))
+        self.image = Image.open("pictures/logoa.png")
+        #image= image.resize(200, 100)
+        self.resized_image= self.image .resize((230,50), Image.Resampling.LANCZOS)
+        self.img = ImageTk.PhotoImage(self.resized_image)
 
-        self.inputtxt.pack()
+        self.label = tk.Label(self.root, image=self.img)
+        self.label.config(bg='#092C42')
+        self.label.place(relx = 0.02, rely =0.02)
+        
+         
+
+        self.fontExample = tkFont.Font(family="Sitka Text", size=18, weight="bold")
+        self.l = tk.Label(text = f"Fog Server {self.id} ",fg="white",font=self.fontExample)
+        self.l.config(bg='#092C42')
+        self.l.place(relx = 0.04, rely =0.25)
+
+        self.fontText= tkFont.Font(family="Sitka Text", size=12)
+        self.priority= tk.Label(text = "Priority : {}".format(self.priority),font=self.fontText,fg="white",bg='#092C42')
+        self.priority.place(relx = 0.04, rely =0.35)
+        self.Capacity= tk.Label(text = "Capacity : {}".format(self.capacity),font=self.fontText,fg="white",bg='#092C42')
+        self.Capacity.place(relx = 0.04, rely =0.40)
+     
+
+        self.font_terminal= tkFont.Font(family="Sitka Text", size=10)
+        self.terminal_label=tk.Label(text = "Terminal output",font=self.font_terminal,fg="white")
+        self.terminal_label.config(bg='#092C42')
+        self.terminal_label.place(relx=0.3, rely=0.165)
+        self.inputtxt = tk.Text(self.root, height = 25,
+                width = 70,
+                bg='#DDEBF4',
+              )
+
+        self.inputtxt.place(relx = 0.3, rely =0.20)
         self.inputtxt.configure(state='disabled')
        
+
+        self.fontButton= tkFont.Font(family="Sitka Text", size=11, weight="bold")
         self.Connect =tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Connect",
-                 #command=self.connect
-                 command=self.connect
-                 )
+                 command=self.connect,
+                 font=self.fontButton,
+                 fg="#092C42",
+                 bg='#DDEBF4'
 
-        self.Connect.pack(padx=100, pady=10, side=tk.LEFT)
+                 )
+        self.Connect.place(relx = 0.15, rely =0.87)
+
+       
         self.Upload = tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Upload",
-                 command = lambda:self.sendLocalModels("Cloud")
+                 command = lambda:self.sendLocalModels("Cloud"),
+                 font=self.fontButton,
+                 fg="#092C42",
+                 bg='#DDEBF4'
                  )
-        self.Upload.pack(padx=5, pady=20, side=tk.LEFT)
+        self.Upload.place(relx = 0.40, rely =0.87)
+
         
        
         self.Start = tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Start FL",
-                 command = self.start_FL)
+                 command = self.start_FL,
+                 font=self.fontButton,
+                 fg="#092C42",
+                 bg='#DDEBF4')
              
          
-        self.Start.pack(padx=5, pady=20, side=tk.LEFT)
+        self.Start.place(relx = 0.65, rely =0.87)
+
+
+
         try:
           self.server.bind((self.HOST, self.PORT))
           print(f"Running the server on {self.HOST} {self.PORT}")
@@ -400,7 +447,9 @@ class Fog:
                   elif  (message.subject=='RequestTLModel'):
                       self.TransferModelToCloud(message)
                   elif (message.subject=='Election'):
-                        self.capacity=random.uniform(0,100) 
+                        self.capacity=int(random.uniform(0,100))
+                        self.Capacity["text"]="Capacity: "+str(self.capacity)
+                        self.capacity
                         data=[self.capacity, self.priority]
                         self.send_message_to_cloud(data,'Election')
                   elif (message.subject=='ElectedAggregator'):

@@ -17,13 +17,12 @@ import torch
 from torch import import_ir_module, nn
 import copy
 from torch.utils.data import DataLoader
-import toml
 import streamlit as st
 from streamlit.scriptrunner.script_run_context import get_script_run_ctx
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageTk
-import time
+
 
 
 import tkinter.font as tkFont
@@ -73,6 +72,90 @@ class Edge(object):
          self.text="\n"
          #st.session_state["text_area"]='ss'
          #st.session_state["socket"]=socket
+
+
+         self.root =tk.Tk()
+         self.root.geometry("1100x800")
+         self.root.configure(bg='#092C42')
+         self.fontExample = tkFont.Font(family="Sitka Text", size=18, weight="bold")
+         self.root.title("Edge {} ".format(self.id)) 
+         self.image = Image.open("pictures/logoa.png")
+        #image= image.resize(200, 100)
+         self.resized_image= self.image.resize((230,50), Image.Resampling.LANCZOS)
+         self.img = ImageTk.PhotoImage(self.resized_image)
+         self.root.iconphoto(False, tk.PhotoImage(file='pictures/industry.png'))
+
+         self.label = tk.Label(self.root, image=self.img)
+         self.label.config(bg='#092C42')
+        #label.pack(padx=0, pady=0,side=tk.LEFT)
+         self.label.place(relx = 0.02, rely =0.02)
+         self.fontText= tkFont.Font(family="Sitka Text", size=12)
+
+         self.domain= tk.Label(text = "Domain application : {}".format(self.domain),font=self.fontText,fg="white",bg='#092C42')
+         self.domain.place(relx = 0.02, rely =0.35)
+
+         self.task= tk.Label(text = "Task application : {}".format(self.task),font=self.fontText,fg="white",bg='#092C42')
+         self.task.place(relx = 0.02, rely =0.4)
+         self.trainACC=tk.Label(text = "Training accuracy : {}%".format(self.accuracy[0]),font=self.fontText,fg="white",bg='#092C42')
+         self.trainACC.place(relx = 0.02, rely =0.45)
+         self.testACC=tk.Label(text = "Testing accuracy : {}%".format(self.accuracy[1]),font=self.fontText,fg="white",bg='#092C42')
+         self.testACC.place(relx = 0.02, rely =0.5)
+
+
+         self.l = tk.Label(text = "Edge {}".format(self.id),font=self.fontExample,fg="white")
+         self.l.config(bg='#092C42')
+         self.l.place(relx = 0.02, rely =0.25)
+         self.inputtxt = tk.Text(self.root, height = 25,
+                width = 70,
+                 bg='#DDEBF4',
+                )#bg = "light yellow"
+         self.font_terminal= tkFont.Font(family="Sitka Text", size=10)
+         self.terminal_label=tk.Label(text = "Terminal output",font=self.font_terminal,fg="white")
+         self.terminal_label.config(bg='#092C42')
+         self.terminal_label.place(relx=0.4, rely=0.165)
+         self.inputtxt.place(relx = 0.4, rely =0.20)
+         self.inputtxt.configure(state='disabled')
+         self.fontButton= tkFont.Font(family="Sitka Text", size=11, weight="bold")
+         self.Connect =tk.Button(self.root, height = 2,
+                 width = 20,
+                 text ="Connect",
+                 bg='#DDEBF4',
+                 command=self.connect,
+                 font=self.fontButton,
+                 fg="#092C42"
+                 )
+
+         self.Connect.place(relx = 0.05, rely =0.87)
+        #.pack(padx=50, pady=20, side=tk.LEFT)
+
+
+         self.Train = tk.Button(self.root, height = 2,
+                 width = 20,
+                 text ="Train",
+                 bg='#DDEBF4',
+                 font=self.fontButton,
+                  fg="#092C42",
+                 command = lambda:self.Training(False)
+                 )
+         self.Train.place(relx = 0.30, rely =0.87)
+         self.Upload = tk.Button(self.root, height = 2,
+                 width = 20,
+                 text ="Upload",
+                 bg='#DDEBF4',
+                 font=self.fontButton,
+                 fg="#092C42",
+                 command = lambda:self.send_message(self.model.state_dict(),'LocalModel')
+                 )
+         self.Upload.place(relx = 0.55, rely =0.87)
+         self.TLRequest = tk.Button(self.root, height = 2,
+                 width = 20,
+                 text ="Request \n For a Model",
+                 bg='#DDEBF4',
+                  font=self.fontButton,
+                  fg="#092C42",
+                 command = lambda:self.TransferLearningRequest()
+                 )
+         self.TLRequest.place(relx = 0.80, rely =0.87)
 
         
         
@@ -164,10 +247,10 @@ class Edge(object):
       
 
        #st.session_state["text_area"]=self.text
-       inputtxt.config(state=tk.NORMAL)
-       inputtxt.insert(tk.END, message )#+ '\n'
-       inputtxt.config(state=tk.DISABLED)
-       inputtxt.see(tk.END) 
+       self.inputtxt.config(state=tk.NORMAL)
+       self.inputtxt.insert(tk.END, message )#+ '\n'
+       self.inputtxt.config(state=tk.DISABLED)
+       self.inputtxt.see(tk.END) 
        # text.edit_modified(0)
 
 #*****************************************************************************************#
@@ -592,9 +675,12 @@ class Edge(object):
         if (datasetName=='test'):
            self.lossTable[0]=round(test_loss,2)
            self.accuracy[0]=round(accuracy,2)
+           self.testACC['text']="Testing Accuracy: "+str( self.accuracy[0])+"%"
         elif (datasetName=='train'):
             self.lossTable[1]=round(test_loss,2)
             self.accuracy[1]=round(accuracy,2)
+            self.trainACC['text']="Training Accuracy: "+str( self.accuracy[1])+"%"
+        print(self.accuracy)
         return accuracy, test_loss
 
      def ui(self, t):
@@ -696,7 +782,8 @@ if __name__ == '__main__':
     elif (args.model=='D'):
         model= Model_D()
     edge =Edge(model=model,dataset=dataset,args=args)
-    edge.main()
+    edge.root.mainloop()
+    #edge.main()
     #edge.ui(1)
    
     
