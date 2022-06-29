@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     print(torch.cuda.is_available())
-    net_glob = Model_D().to(args.device)
+    net_glob = Model_Fashion().to(args.device)
 
     net_glob.train() 
     w=net_glob.state_dict()

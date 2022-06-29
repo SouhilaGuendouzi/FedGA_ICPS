@@ -16,6 +16,9 @@ from Aggregation.FedGA import *
 from Entities.Model import Model_Fashion
 from utils.create_MNIST_datasets import get_FashionMNIST
 import numpy as np
+from PIL import Image, ImageTk
+import tkinter.font as tkFont
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 HOST = '127.0.0.1'
 PORT = 12345 # You can use any port between 0 to 65535
@@ -65,28 +68,60 @@ class Cloud:
 
 ###################### UI #####################################################
         self.root =tk.Tk()
-        self.root.geometry("600x600")
+        self.root.configure(bg='#092C42')
+        self.root.geometry("900x800") 
         self.root.title(" Cloud Interface ") 
-        self.l = tk.Label(text = "Cloud Server")
-        self.l.pack()
-        self.inputtxt = tk.Text(self.root, height = 25,
-                width = 60,
-                bg = "light yellow")
+        self.root.iconphoto(False, tk.PhotoImage(file='pictures/industry.png'))
+        self.image = Image.open("pictures/logoa.png")
+        self.resized_image= self.image .resize((230,50), Image.Resampling.LANCZOS)
+        self.img = ImageTk.PhotoImage(self.resized_image)
+        self.label = tk.Label(self.root, image=self.img)
+        self.label.config(bg='#092C42')
+        self.label.place(relx = 0.02, rely =0.02)
 
-        self.inputtxt.pack()
+
+        self.fontExample = tkFont.Font(family="Sitka Text", size=18, weight="bold")
+        self.l = tk.Label(text = "Cloud Server",fg="white",font=self.fontExample)
+        self.l.config(bg='#092C42')
+        self.l.place(relx = 0.04, rely =0.25)
+
+        self.fontText= tkFont.Font(family="Sitka Text", size=12)
+        self.priority= tk.Label(text = "Priority : {}".format(self.priority),font=self.fontText,fg="white",bg='#092C42')
+        self.priority.place(relx = 0.04, rely =0.35)
+        self.Capacity= tk.Label(text = "Capacity : {}".format(self.capacity),font=self.fontText,fg="white",bg='#092C42')
+        self.Capacity.place(relx = 0.04, rely =0.40)
+
+
+
+
+
+        self.font_terminal= tkFont.Font(family="Sitka Text", size=10)
+        self.terminal_label=tk.Label(text = "Terminal output",font=self.font_terminal,fg="white")
+        self.terminal_label.config(bg='#092C42')
+        self.terminal_label.place(relx=0.3, rely=0.165)
+        self.inputtxt = tk.Text(self.root, height = 25,
+                width = 70,
+                bg='#DDEBF4',
+              )
+
+        self.inputtxt.place(relx = 0.3, rely =0.20)
         self.inputtxt.configure(state='disabled')
        
-
+        self.fontButton= tkFont.Font(family="Sitka Text", size=11, weight="bold")
         self.Start_FL = tk.Button(self.root, height = 2,
                  width = 20,
                  text ="Start FedGA-ICPS",
-                 command = lambda:self.start_FL()
+                 command = lambda:self.start_FL(),
+                   font=self.fontButton,
+                 fg="#092C42",
+                 bg='#DDEBF4'
                  )
-        self.Start_FL.pack(padx=200, pady=10, side=tk.LEFT)
+        self.Start_FL.place(relx = 0.5, rely =0.87)
+       
         try:
           self.server.bind((HOST, PORT))
           print(f"Running the server on {HOST} {PORT}")
-          self.add_message(f"Running the server on {HOST} {PORT} \n")
+          self.add_message(f"Cloud> Running the server on {HOST} {PORT} \n")
         except Exception as e:
            print(f"Unable to bind to host {HOST} and port {PORT} because of {e}")       
 #*****************************************************************************************#
@@ -128,7 +163,7 @@ class Cloud:
         Find=False
         
         if message != '':
-          self.add_message(' Message received From Fog'+ str(id)+' About '+message.subject  + ' \n')
+          self.add_message('Cloud> Message received From Fog'+ str(id)+' About '+message.subject  + ' \n')
 
           while (i<len(self.active_fogs) and Find==False):
               username="Fog "+str(id)
@@ -163,7 +198,7 @@ class Cloud:
                     self.numberFogsreceived+=1
                     self.active_fogs[i][4]=message.data[0]   #capacity 
                     self.active_fogs[i][5]=message.data[1]   #priority
-
+                   
                     threading.Thread(target=  self.Elect, args=()).start()
 
                 except Exception as e:
@@ -244,7 +279,7 @@ class Cloud:
             if (existedFog==False):
                self.active_fogs.append([id, fog,address, [],None,None,backupPort])  #id, socket, address, (list of ==> [idEdge,address,accuracy,persoModel,domain,task]),capacity, priority backup port
                print( "" + f" Fog {id} added to the System")
-               self.add_message(f"Fog {id} added to the System \n")
+               self.add_message(f"Cloud> Fog {id} added to the System \n")
                #self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
                break
             else:
@@ -252,7 +287,7 @@ class Cloud:
                self.active_fogs[i][2]=address
   
                print( "" + f" Fog {id} reconnected to the System")
-               self.add_message(f"Fog {id}  reconnected to the System \n")
+               self.add_message(f"Cloud> Fog {id}  reconnected to the System \n")
           else:
             print("Fog username is empty")
      
@@ -306,13 +341,16 @@ class Cloud:
     def start_FL(self):
       self.numberFL+=1
       self.numberFogsreceived=0
+     
       
       if (self.numberFL!=1):
+         self.capacity=round(random.uniform(0,100),2) 
+         self.Capacity["text"]="Capacity: "+str(self.capacity)
          self.send_messages_to_all(None,"Election")
       else :
         self.FLrounds=self.args.epochs
         #self.numberFogsreceived=0
-        self.add_message("Starting FL \n")
+        self.add_message("Cloud> Starting FL \n")
         self.send_messages_to_all(self.args.aggr,"FLstart")
 
        
@@ -323,7 +361,7 @@ class Cloud:
        if ( self.numberFogsreceived==len(self.active_fogs)):
          
          self.FLrounds-=1
-         self.add_message("Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
+         self.add_message("Cloud> Aggregation Round"+ str( self.args.epochs-self.FLrounds)+"\n")
          local_weights=[]
          for fog in self.active_fogs:
               for usr in fog[3]:
@@ -334,7 +372,7 @@ class Cloud:
          if (self.FLrounds==0):
             self.send_messages_to_all(self.weights_global,"FLEnd")
             self.numberFogsreceived=0    
-            self.add_message("Sending Last Global Model \n")
+            self.add_message("Cloud> Sending Last Global Model \n")
          
          else : self.send_messages_to_all(self.weights_global,"FL")
          self.numberFogsreceived=0          
@@ -410,9 +448,8 @@ class Cloud:
 
 
     def Elect(self):
-       
+       print(self.numberFogsreceived,len(self.active_fogs))
        if (self.numberFogsreceived==len(self.active_fogs)):
-        self.capacity=random.uniform(0,100) 
         print(f'My capacity {self.capacity} and {self.priority}')
         capacity=self.capacity
         priority= self.priority
@@ -431,10 +468,11 @@ class Cloud:
         if (self.aggregatorSocket==self.server):
             self.aggregator="Me"
             self.FLrounds=self.args.epochs
-            self.add_message("Starting FL \n")
+            self.add_message("Cloud> Starting FL \n")
             self.send_messages_to_all(self.args.aggr,"FLstart")
         else :
           self.aggregator="Fog"
+          self.add_message(f"Cloud> The elected aggregator is Fog {iden[2]}  \n")
           self.send_message_to_fog( self.aggregatorSocket,args.aggr,'ElectedAggregator')
           for user in self.active_fogs:
             if (user[1]!=self.aggregatorSocket):

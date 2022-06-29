@@ -17,8 +17,6 @@ import torch
 from torch import import_ir_module, nn
 import copy
 from torch.utils.data import DataLoader
-import streamlit as st
-from streamlit.scriptrunner.script_run_context import get_script_run_ctx
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageTk
@@ -30,11 +28,6 @@ import tkinter.font as tkFont
 
 HOST = '127.0.0.1'
 PORT = 12346
-
-global i
-i=0
-
-
 
 
 class Edge(object):
@@ -69,11 +62,8 @@ class Edge(object):
          self.roundGraphes=0
 
 
-         self.text="\n"
-         #st.session_state["text_area"]='ss'
-         #st.session_state["socket"]=socket
-
-
+     
+    
          self.root =tk.Tk()
          self.root.geometry("1100x800")
          self.root.configure(bg='#092C42')
@@ -91,11 +81,11 @@ class Edge(object):
          self.label.place(relx = 0.02, rely =0.02)
          self.fontText= tkFont.Font(family="Sitka Text", size=12)
 
-         self.domain= tk.Label(text = "Domain application : {}".format(self.domain),font=self.fontText,fg="white",bg='#092C42')
-         self.domain.place(relx = 0.02, rely =0.35)
+         self.domainUI= tk.Label(text = "Domain application : {}".format(self.domain),font=self.fontText,fg="white",bg='#092C42')
+         self.domainUI.place(relx = 0.02, rely =0.35)
 
-         self.task= tk.Label(text = "Task application : {}".format(self.task),font=self.fontText,fg="white",bg='#092C42')
-         self.task.place(relx = 0.02, rely =0.4)
+         self.taskUI= tk.Label(text = "Task application : {}".format(self.task),font=self.fontText,fg="white",bg='#092C42')
+         self.taskUI.place(relx = 0.02, rely =0.4)
          self.trainACC=tk.Label(text = "Training accuracy : {}%".format(self.accuracy[0]),font=self.fontText,fg="white",bg='#092C42')
          self.trainACC.place(relx = 0.02, rely =0.45)
          self.testACC=tk.Label(text = "Testing accuracy : {}%".format(self.accuracy[1]),font=self.fontText,fg="white",bg='#092C42')
@@ -126,8 +116,6 @@ class Edge(object):
                  )
 
          self.Connect.place(relx = 0.05, rely =0.87)
-        #.pack(padx=50, pady=20, side=tk.LEFT)
-
 
          self.Train = tk.Button(self.root, height = 2,
                  width = 20,
@@ -162,26 +150,21 @@ class Edge(object):
 
 #### Socket Requests and Responses
      def connect(self):
-   
-       Var= False
+
        # try except block
        try:
 
            # Connect to the server
            self.socket.connect((HOST, self.portFog))
            print("Successfully connected to server")
-           self.add_message(f'Edge {self.id}> Successfully connected to Fog server \n')
-           self.text+="Successfully connected to Fog server \n"
-           self.text+=":) \n"
-           st.session_state.text_area=self.text
+           self.add_message(f'Edge{self.id}> Successfully connected to Fog server \n')
+         
+          
            self.send_message(self.id,'Connection')
-           Var= True
-
+           
        except:
         print("Unable to connect to server", f"Unable to connect to server {HOST} {self.portFog}")
-        self.text+="Unable to connect to server"+f"Unable to connect to server {HOST} {self.portFog} \n"
-        
-       get_script_run_ctx()
+      
        threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
        
     
@@ -208,7 +191,7 @@ class Edge(object):
                objectToSend.task=self.task
                objectToSend.architecture=self.model
                message = objectToSend
-               self.add_message(f'Edge {self.id}> Local model is sent to the Fog server \n')
+               self.add_message(f'Edge{self.id}> Local model is sent to the Fog server \n')
         
             elif (subject=="FinalLocalModel"):
                objectToSend.id=self.id
@@ -222,14 +205,14 @@ class Edge(object):
                objectToSend.architecture=self.model
                objectToSend.measures= [self.accuracy_locals_train,self.accuracy_locals_test,self.loss_locals_train,self.loss_locals_test]
                message = objectToSend
-               self.add_message(f'Edge {self.id}> Local model is sent to the Fog server \n')
+               self.add_message(f'Edge{self.id}> Local model is sent to the Fog server \n')
             elif (subject=="RequestTLModel"):
                objectToSend.id=self.id
                objectToSend.data=message
                objectToSend.subject=subject
                message=objectToSend
-               self.add_message(f'Edge {self.id}> A request is sent to Fog server for Transfer Learning \n ')
-               
+               self.add_message(f'Edge{self.id}> A request is sent to Fog server for Transfer Learning \n ')
+           
             message = pickle.dumps(message)
             self.socket.send(message)
       
@@ -241,7 +224,7 @@ class Edge(object):
 
 #*****************************************************************************************#
      def add_message(self,message):
-       self.text=self.text+message
+  
        #text_area.text_area('Output', value=st.session_state.edge.text,height=500, disabled=True)
        #st.write(self.text)
       
@@ -265,7 +248,7 @@ class Edge(object):
                   #self.add_message('Fog Server is requesting For: '+message.subject+"\n")
                   if (message.subject=='FLstart'):
                      self.roundGraphes+=1
-                     self.add_message(f'Fog server> There is a request to start Federated Learning \n')
+                     self.add_message(f'Edge{self.id}> There is a request from Fog server to start Federated Learning \n')
                      self.aggregationmethod=message.data
                      threading.Thread(target=self.Training, args=(True,)).start() #it returns the whole model
                      
@@ -273,17 +256,17 @@ class Edge(object):
                   elif  (message.subject=='FL'):
                              self.roundGraphes+=1
                             
-                             self.add_message(f'Fog server> There is a Request to continue Federated Learning process \n')
+                             self.add_message(f'Edge{self.id}> There is a Request from the Fog server to continue Federated Learning process \n')
                     
                              threading.Thread(target=self.Updating, args=(message.data,True,"NotFinal")).start() #message.data is personnalized weights
                   elif  (message.subject=='FLEnd'):
                              self.roundGraphes+=1
-                             self.add_message(f'Fog server> There is a last Request of Federated Learning  \n')
+                             self.add_message(f'Edge{self.id}> There is a last Request from the Fog server of Federated Learning  \n')
                              threading.Thread(target=self.Updating, args=(message.data,False,"Final")).start() 
-                             get_script_run_ctx()
+                          
 
                   elif  (message.subject=='TLModel'):
-                      self.add_message(f'Fog server> This is the appropriate model \n ')
+                      self.add_message(f'Edge{self.id}> The appropriate model is received from the Fog server \n ')
                       #print(message.data)
                       self.model=message.data #le model tout entier 
                       threading.Thread(target=self.Training, args=(False,)).start() #it returns the whole model
@@ -301,7 +284,7 @@ class Edge(object):
      def Training(self,Request):
       
          if (Request==True):
-             self.add_message(f' Edge {self.id}> Starting FedGA-ICPS \n')
+             self.add_message(f' Edge{self.id}> Starting FedGA-ICPS \n')
              if (self.aggregationmethod=='FedAVG'):
                t= threading.Thread(target=self.local_train_FedAVG, args=(Request,))
       
@@ -421,7 +404,7 @@ class Edge(object):
 #### Learning Processes
 
      def local_train_FedAVG(self,Request):# with its own weights in case of FedAVG, with similar models
-         self.add_message(f'Edge {self.id}> Training')
+         self.add_message(f'Edge{self.id}> Training')
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.data = self.datasetTrain
@@ -449,11 +432,11 @@ class Edge(object):
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          
          self.add_message('. \n')   
-         self.add_message(f'Edge {self.id}> Testing ')
+         self.add_message(f'Edge{self.id}> Testing ')
          acc, loss= self.test_img('train')
-         self.add_message(f'Edge {self.id}> Training Accuracy  \t'+str(acc)+"\n")
+         self.add_message(f'Edge{self.id}> Training Accuracy  \t'+str(round(acc,2))+"\n")
          accT, lossT= self.test_img('test')
-         self.add_message(f'Edge {self.id}> Testing Accuracy  \t'+str(accT)+"\n")  
+         self.add_message(f'Edge{self.id}> Testing Accuracy  \t'+str(round(accT,2))+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
              self.accuracy_locals_train.append(acc)
@@ -465,7 +448,7 @@ class Edge(object):
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 #*****************************************************************************************#
      def local_train_Other(self,Request):# with its own weights
-         self.add_message(f'Edge {self.id}> Training')
+         self.add_message(f'Edge{self.id}> Training')
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.data = self.datasetTrain
@@ -502,11 +485,11 @@ class Edge(object):
           except Exception as e:
              print(e)
          self.add_message('. \n')   
-         self.add_message(f"Edge {self.id}> Testing")
+         self.add_message(f"Edge{self.id}> Testing")
          acc, loss= self.test_img('train')
-         self.add_message(f'Edge {self.id}> Training Accuracy  \t'+str(acc)+"\n")
+         self.add_message(f'Edge{self.id}> Training Accuracy  \t'+str(round(acc,2))+"\n")
          accT, lossT= self.test_img('test')
-         self.add_message(f'Edge {self.id}> Testing Accuracy    \t'+str(accT)+"\n")  
+         self.add_message(f'Edge{self.id}> Testing Accuracy    \t'+str(round(accT,2))+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
              self.accuracy_locals_train.append(acc)
@@ -519,7 +502,7 @@ class Edge(object):
 
 #*****************************************************************************************#
      def local_update_FedAVG(self,weights_global,Request,statut):   #with the global layers weights in case of FedAVG, with similar models
-         self.add_message(f'Edge {self.id}> Updating .')
+         self.add_message(f'Edge{self.id}> Updating .')
          self.model.train()
          self.loss_func = nn.CrossEntropyLoss()
          self.previous_weights=self.model.state_dict()
@@ -555,11 +538,11 @@ class Edge(object):
                 epoch_loss.append(self.loss)
                 self.model.load_state_dict(self.previous_weights)
          self.add_message('. \n')   
-         self.add_message(f"Edge {self.id}>Testing")
+         self.add_message(f"Edge{self.id}>Testing")
          acc, loss= self.test_img('train')
-         self.add_message(f'Edge {self.id}> Training Accuracy   \t'+str(acc)+"\n")
+         self.add_message(f'Edge{self.id}> Training Accuracy   \t'+str(round(acc,2))+"\n")
          accT, lossT= self.test_img('test')
-         self.add_message('Testing Accuracy   \t'+str(accT)+"\n")  
+         self.add_message('Testing Accuracy   \t'+str(round(accT,2))+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
              self.accuracy_locals_train.append(acc)
@@ -573,7 +556,7 @@ class Edge(object):
 
  #*****************************************************************************************#       
      def local_update_Other(self,weights_global,Request,statut): #with the global personnalized layers weights in case of FedPer, FedGa ..
-         self.add_message(f'Edge {self.id}> Updating .')
+         self.add_message(f'Edge{self.id}> Updating .')
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers
@@ -618,18 +601,18 @@ class Edge(object):
           except:
             print('')
          self.add_message('. \n')   
-         self.add_message(f'Edge {self.id}> Testing')
+         self.add_message(f'Edge{self.id}> Testing')
          acc, loss= self.test_img('train')
-         self.add_message(f'Edge {self.id}> Training Accuracy   \t'+str(acc)+"\n")
+         self.add_message(f'Edge{self.id}> Training Accuracy   \t'+str(round(acc,2))+"\n")
          accT, lossT= self.test_img('test')
-         self.add_message(f'Edge {self.id}> Testing Accuracy   \t'+str(accT)+"\n")  
+         self.add_message(f'Edge{self.id}> Testing Accuracy   \t'+str(round(accT,2))+"\n")  
          self.weightsJustforReturn=self.weights
          if (Request==True):
-             self.accuracy_locals_train.append(acc)
-             self.accuracy_locals_test.append(accT)
-             self.loss_locals_train.append(loss)
-             self.loss_locals_test.append(lossT)
-             self.send_message(self.weightsJustforReturn,'LocalModel')
+          self.accuracy_locals_train.append(acc)
+          self.accuracy_locals_test.append(accT)
+          self.loss_locals_train.append(loss)
+          self.loss_locals_test.append(lossT)
+          self.send_message(self.weightsJustforReturn,'LocalModel')
          if(statut=="Final") : self.send_message(self.weightsJustforReturn,'FinalLocalModel')
          return self.weights, sum(epoch_loss) / len(epoch_loss) # state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
     
@@ -680,88 +663,27 @@ class Edge(object):
             self.lossTable[1]=round(test_loss,2)
             self.accuracy[1]=round(accuracy,2)
             self.trainACC['text']="Training Accuracy: "+str( self.accuracy[1])+"%"
-        print(self.accuracy)
+        #print(self.accuracy)
         return accuracy, test_loss
 
-     def ui(self, t):
    
-       if 'edge' not in st.session_state:	st.session_state.edge = edge
-
-    #t=threading.Thread(target=edge.ui, args=("hi", ))
-       get_script_run_ctx()
-    #t.start()
-      
-       if 'text_area' not in st.session_state:
-           st.session_state.text_area = " "
-      
-       st.markdown(f"# Edge {self.id} ")
-       image = Image.open('pictures/logoa.png')
-      
-       st.sidebar.image(image)
-       st.sidebar.markdown(f"# Edge {st.session_state.edge.id}")
-
-    
-       st.sidebar.write(f"Ip Address: {HOST}")
-       st.sidebar.write(f"Domain: {st.session_state.edge.domain}")
-       st.sidebar.write(f"Task: {edge.task}")
-       st.sidebar.write(f"Train Accuracy: {st.session_state.edge.accuracy[0]}")
-       st.sidebar.write(f"Test Accuracy: {st.session_state.edge.accuracy[1]}")
-    
-       col1, col2, col3, col4 = st.sidebar.columns(4)
-       with col1:
-        connect=st.sidebar.button(label='Connect',key='connect')
-       with col2:
-         train=st.sidebar.button(label='Train',key='Train')
-       with col3:
-        upload = st.sidebar.button(label="Upload",key="Upload")
-       with col4:
-         request=st.sidebar.button(label="Request for Model",key="Request for Model")
-    #with col2:
-       if connect:
-            #st.session_state.text_area="souhila"
-            st.session_state.edge.connect()
-         
-       if train:
-          #print(st.session_state.text_area)
-          
-          st.session_state.edge.Training(False)
-
-        
-       elif upload :
-            st.session_state.edge.send_message(edge.model.state_dict(),'LocalModel')
-
-     
-       if request:
-             st.session_state.edge.TransferLearningRequest()
-         
-    
-    
-
-       st.text_area('Output', value=st.session_state.edge.text,height=500, disabled=True)
-     #st.write(st.session_state.edge.text)
-       chart_data = pd.DataFrame(
-     np.random.randn(20, 3),
-      columns=['a', 'b', 'c'])
-
-       st.line_chart(chart_data, width=500,height=500) 
-
      
     
 
 #*****************************************************************************************#
 if __name__ == '__main__':
     args = args_parser() 
-    i=i+1
+   
     print("next")
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     #print(torch.cuda.is_available())
-    list_users=range(4)
+    list_users=range(5)
     if (args.id in list_users): 
       mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
       n_samples_train =1500, n_samples_test=250, n_clients =4,  # i have calculated because there are 60000/ 1000
       batch_size =50, shuffle =True)     
-      datasetTrain= mnist_non_iid_train_dls[args.id]  
-      datasetTest=mnist_non_iid_test_dls[args.id]      #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch
+      datasetTrain= mnist_non_iid_train_dls[args.id-1]  
+      datasetTest=mnist_non_iid_test_dls[args.id-1]      #(1500+250) samples for each client / 50 batch size ==num of epochs / and 30 number of batch
       dataset =[datasetTrain,datasetTest]
     else :
       mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,
@@ -784,7 +706,7 @@ if __name__ == '__main__':
     edge =Edge(model=model,dataset=dataset,args=args)
     edge.root.mainloop()
     #edge.main()
-    #edge.ui(1)
+
    
     
 

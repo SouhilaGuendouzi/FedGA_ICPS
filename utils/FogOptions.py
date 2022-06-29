@@ -11,7 +11,7 @@ def args_parser():
     
    
     parser.add_argument('--num_users', type=int, default=4, help="number of users: K")
-    parser.add_argument('--epochs', type=int, default=4, help="rounds of FL rounds") 
+    parser.add_argument('--epochs', type=int, default=50, help="rounds of FL rounds") 
 
     parser.add_argument('--gpu', type=int, default=0, help="GPU ID, -1 for CPU")
    

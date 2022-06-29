@@ -15,7 +15,7 @@ def args_parser():
     parser.add_argument('--epochs', type=int, default=10, help="rounds of training") # epochs number is the same as number of layers in FedMA
     parser.add_argument('--model', type=str, default='default', help="CNN model")
     parser.add_argument('--frac', type=float, default=0.1, help="the fraction of clients: C")
-    parser.add_argument('--local_ep', type=int, default=50, help="the number of local epochs: E")
+    parser.add_argument('--local_ep', type=int, default=30, help="the number of local epochs: E")
    
     parser.add_argument('--local_bs', type=int, default=10, help="local batch size: B")
     parser.add_argument('--bs', type=int, default=128, help="test batch size")
