@@ -18,9 +18,10 @@ def args_parser():
     # socket arguments
     
     parser.add_argument('--myport', type=int, default=0, help="server port") 
-    parser.add_argument('--myadr', type=str, default='127.0.0.0', help="server port")
-    parser.add_argument('--LISTENER_LIMIT', type=int, default=10, help="server port") 
-    parser.add_argument('--portCloud', type=int, default=0, help="server port") 
+    parser.add_argument('--myadr', type=str, default='127.0.0.0', help="server address")
+    parser.add_argument('--LISTENER_LIMIT', type=int, default=10, help="number of max clients") 
+    parser.add_argument('--portCloud', type=int, default=0, help="cloud port") 
+    parser.add_argument('--adrCloud', type=str, default='127.0.0.0', help="cloud address") 
 
     #Election parameters
     parser.add_argument('--priority', type=int, default=99, help="server priority which is fixed")

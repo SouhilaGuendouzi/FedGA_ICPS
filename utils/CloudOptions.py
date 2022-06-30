@@ -26,8 +26,9 @@ def args_parser():
 
      # socket parameters
     parser.add_argument('--LISTENER_LIMIT', type=int, default=10, help="server port")
-    parser.add_argument('--myport', type=int, default=0, help="server port") 
-    parser.add_argument('--portFog', type=int, default=0, help="server port") 
+    parser.add_argument('--myport', type=int, default=0, help="server port")
+    parser.add_argument('--myadr', type=str, default='127.0.0.0', help="server port") 
+  
 
     #Election parameters
     parser.add_argument('--priority', type=int, default=99, help="server priority which is fixed")

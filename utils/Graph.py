@@ -79,6 +79,7 @@ def Plot_Graphes_for_fog (id,epochs,num_users,accTrain,accTest,lossTrain,lossTes
         clients_accuracy_test[j][i]= accTest[j][i] 
         clients_loss_train[j][i]= lossTrain[j][i]
         clients_loss_test[j][i]= lossTest[j][i]
+
     if (id==1):
      for i in range(num_users):
         
@@ -101,9 +102,9 @@ def Plot_Graphes_for_fog (id,epochs,num_users,accTrain,accTest,lossTrain,lossTes
       axis[1, 1].set_title("{} Test Loss".format( methode),fontsize=10) 
       axis[1, 1].legend(['Edge {}'.format(j+1) for j in range(num_users)],fontsize=10)
       
-    else:
+    elif(id==2):
      for i in range(num_users):
-        
+      print('iiiii',i,range(num_users))  
       print(f'Client {i}',range(epochs),clients_accuracy_train[i])
       axis[0, 0].plot(range(epochs),clients_accuracy_train[i] ) 
       axis[0, 0].set_title("{} Train Accuracy".format( methode),fontsize=10) 
@@ -122,7 +123,27 @@ def Plot_Graphes_for_fog (id,epochs,num_users,accTrain,accTest,lossTrain,lossTes
       axis[1, 1].plot(range(epochs),  clients_loss_test[i]) 
       axis[1, 1].set_title("{} Test Loss".format( methode),fontsize=10) 
       axis[1, 1].legend(['Edge {}'.format(id+j+1) for j in range(num_users)],fontsize=10)
+    else :
+      for i in range(num_users):
+       print(f'Client {i}',range(epochs),clients_accuracy_train[i])
+       axis[0, 0].plot(range(epochs),clients_accuracy_train[i] ) 
+       axis[0, 0].set_title("{} Train Accuracy".format( methode),fontsize=10) 
+       axis[0, 0].legend(['Edge {}'.format(id+j+2) for j in range(num_users)],fontsize=10)
       
+       axis[0, 1].plot(range(epochs),  clients_loss_train[i]) 
+       axis[0, 1].set_title("{} Train Loss".format( methode),fontsize=10) 
+       axis[0, 1].legend(['Edge {}'.format(id+j+2) for j in range(num_users)],fontsize=10)
+       
+  
+       axis[1, 0].plot(range(epochs), clients_accuracy_test[i]) 
+       axis[1, 0].set_title("{} Test Accuracy".format( methode),fontsize=10) 
+       axis[1, 0].legend(['Edge {}'.format(id+j+2)  for j in range(num_users)],fontsize=10)
+     
+   
+       axis[1, 1].plot(range(epochs),  clients_loss_test[i]) 
+       axis[1, 1].set_title("{} Test Loss".format( methode),fontsize=10) 
+       axis[1, 1].legend(['Edge {}'.format(id+j+2) for j in range(num_users)],fontsize=10)
+
 
     plt.xlabel("FL rounds ")
     plt.savefig(f'save/fog{id}{methode}.png')

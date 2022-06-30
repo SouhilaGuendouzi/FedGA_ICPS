@@ -55,6 +55,7 @@ class Edge(object):
          self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
+
          self.accuracy_locals_train=[]
          self.accuracy_locals_test=[]
          self.loss_locals_train=[]
@@ -62,8 +63,6 @@ class Edge(object):
          self.roundGraphes=0
 
 
-     
-    
          self.root =tk.Tk()
          self.root.geometry("1100x800")
          self.root.configure(bg='#092C42')
@@ -167,9 +166,6 @@ class Edge(object):
       
        threading.Thread(target=self.listen_for_messages_from_server, args=(self.socket, )).start()
        
-    
-       #return Var
-
 
 #*****************************************************************************************#
      def send_message(self,message,subject):
@@ -221,7 +217,6 @@ class Edge(object):
        except Exception as e : 
            print(e)
           
-
 #*****************************************************************************************#
      def add_message(self,message):
   
@@ -298,7 +293,6 @@ class Edge(object):
                t.start() #it returns the whole model
       
 
-
      def Updating(self,data,Request,statut):
 
          if (self.aggregationmethod=='FedAVG'):
@@ -310,7 +304,6 @@ class Edge(object):
      def TransferLearningRequest(self):
         message=[self.domain,self.task]
         self.send_message(message,"RequestTLModel")
-        
 
 #*****************************************************************************************#
      def main(self):

@@ -46,8 +46,9 @@ def args_parser():
     parser.add_argument('--all_clients', action='store_true', help='aggregation over all clients')
      # socket parameters
     parser.add_argument('--myport', type=int, default=0, help="server port") 
-    parser.add_argument('--portFog', type=int, default=0, help="server port") 
-    parser.add_argument('--portCloud', type=int, default=0, help="server port") 
+    parser.add_argument('--portFog', type=int, default=0, help="fogport") 
+    parser.add_argument('--adrFog', type=str, default='127.0.0.0', help="fog address")  
+   
 
     args = parser.parse_args()
     return args

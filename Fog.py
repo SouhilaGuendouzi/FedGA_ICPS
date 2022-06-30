@@ -57,6 +57,7 @@ class Fog:
         self.Actuator="Free"
         self.aggregator="Cloud"
         self.method_name="FedAVG"
+        self.weights_global=[]
  
         self.capacity=int(random.uniform(0,100))
         self.priority=args.priority    
@@ -75,11 +76,19 @@ class Fog:
          
 
         #****************** Aggregation **********************#
-        self.global_model=Model_Fashion()
-        train, test = get_FashionMNIST('iid',
-        n_samples_train =1500, n_samples_test=250, n_clients =4,  
-        batch_size =50, shuffle =True)
-        self.dataset=test[self.id]
+        if (self.id in range(4)):
+         self.global_model=Model_Fashion()
+         train, test = get_FashionMNIST('iid',
+         n_samples_train =1500, n_samples_test=250, n_clients =4,  
+         batch_size =50, shuffle =True)
+         self.dataset=test[self.id]
+        else :
+           self.global_model=Model_Fashion()
+           train, test = get_FashionMNIST('iid',
+           n_samples_train =1500, n_samples_test=250, n_clients =4,  
+           batch_size =50, shuffle =True)
+           self.dataset=test[2]
+
 
         #****************** UI **********************#
         self.root =tk.Tk()
@@ -363,7 +372,7 @@ class Fog:
         
         if message != '':
           self.add_message(f'Fog{id}> Message received From Fog'+ str(id)+' About '+message.subject  + ' \n')
-          print('emmmmmmmmmmmmmm',message.data)
+          #print('emmmmmmmmmmmmmm',message.data)
 
           while (i<len(self.active_fogs) and Find==False):
               username="Fog "+str(id)
@@ -763,7 +772,7 @@ class Fog:
         self.send_message_to_cloud(data,"LocalModels")
       else: self.send_message_to_aggregator(data,"LocalModels")
 
-      self.receivedLocalModels=0
+      #self.receivedLocalModels=0
   
 
 #**********************************************************************#
@@ -845,7 +854,7 @@ class Fog:
         self.i=0
         if (self.method_name=='FedAVG'):
               self.weights_global=FedAvg(self.weights_locals)
-        elif (self.method_name=='FedGA'):
+        elif (self.method_name=='ff'):
              initial_population=self.weights_locals
         
              for d in self.weights_locals: # for each user
@@ -864,7 +873,7 @@ class Fog:
 
              self.weights_global=FedPer(self.weights_locals, self.global_model)
 
-        elif (self.method_name=='FedPerGA'):
+        elif (self.method_name=='FedGA'):
             
               initial_population=self.weights_locals #machi kamline
               for d in self.weights_locals: # for each user

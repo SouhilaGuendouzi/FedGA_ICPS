@@ -120,8 +120,8 @@ class Cloud:
        
         try:
           self.server.bind((HOST, PORT))
-          print(f"Running the server on {HOST} {PORT}")
-          self.add_message(f"Cloud> Running the server on {HOST} {PORT} \n")
+          print(f"Running the server on {HOST}:{PORT}")
+          self.add_message(f"Cloud> Running the server on {HOST}:{PORT} \n")
         except Exception as e:
            print(f"Unable to bind to host {HOST} and port {PORT} because of {e}")       
 #*****************************************************************************************#
@@ -130,6 +130,7 @@ class Cloud:
        self.inputtxt.config(state=tk.NORMAL)
        self.inputtxt.insert(tk.END, message )
        self.inputtxt.config(state=tk.DISABLED)
+       self.inputtxt.see(tk.END) 
 #*****************************************************************************************#
     def send_message_to_fog(self,fog,message,subject):
        try :
@@ -389,7 +390,7 @@ class Cloud:
         self.i=0
         if (self.method_name=='FedAVG'):
               self.weights_global=FedAvg(self.weights_locals)
-        elif (self.method_name=='FedGA'):
+        elif (self.method_name=='fedGA'):
              initial_population=self.weights_locals
         
              for d in self.weights_locals: # for each user
@@ -407,7 +408,7 @@ class Cloud:
 
              self.weights_global=FedPer(self.weights_locals, self.global_model)
 
-        elif (self.method_name=='FedPerGA'):
+        elif (self.method_name=='FedGA'):
             
               initial_population=self.weights_locals #machi kamline
               for d in self.weights_locals: # for each user
