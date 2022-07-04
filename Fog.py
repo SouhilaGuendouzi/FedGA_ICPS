@@ -561,18 +561,18 @@ class Fog:
                  else : i=i+1
                if (ExistedClient==False):
                  self.active_clients.append([id, client,address,[None,None,None,None,None,None,None]])  #username, adr, data object     
-                 print( "SERVER~" + f"Client {id} added to the System")
-                 self.add_message(f"Fog{self.id}> Client {id} added to the System \n")
+                 print( "SERVER~" + f"Edge {id} added to the System")
+                 self.add_message(f"Fog{self.id}> Edge {id} added to the System \n")
                  
                  
                else :
                  self.active_clients[i][1]=client
                  self.active_clients[i][2]=address
-                 print( "SERVER~" + f"Client {id} is reconnected to the System")
-                 self.add_message(f"Fog{self.id}> Client {id} reconnected to the System \n")
+                 print( "SERVER~" + f"Edge {id} is reconnected to the System")
+                 self.add_message(f"Fog{self.id}> Edge {id} reconnected to the System \n")
               
               else:
-               print("Client username is empty")
+               print("Edge username is empty")
             elif (subject=='RequestTLModel'):
                stop = False
                i =0
@@ -635,7 +635,7 @@ class Fog:
             id =usr[0]
         if message != '':
             #msg=username+"  "+message
-            self.add_message(f'Fog{self.id}> Message received From Client'+ str(id)+' About '+message.subject  + ' \n')
+            self.add_message(f'Fog{self.id}> Message received From Edge'+ str(id)+' About '+message.subject  + ' \n')
            
             while (i<len(self.active_clients) and Find==False):
               username="Client "+str(id)
@@ -702,7 +702,7 @@ class Fog:
         
         if message != '':
             #msg=username+"  "+message
-            self.add_message(f'Fog{self.id}> Message received From Client'+ str(id)+' About '+message.subject  + ' \n')
+            self.add_message(f'Fog{self.id}> Message received From Edge'+ str(id)+' About '+message.subject  + ' \n')
            
             while (i<len(self.active_clients) and Find==False):
               username="Client "+str(id)

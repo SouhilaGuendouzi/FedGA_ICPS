@@ -8,7 +8,7 @@ python Cloud.py --myadr '127.0.0.1' --myport 12345 --aggr FedGA  --epochs 50
 
  Python Fog.py --id 1 --myadr '127.0.0.1' --myport 11111 --adrCloud '127.0.0.1' --portCloud 12345  --priority 80
  Python Fog.py --id 2 --myadr '127.0.0.1' --myport 22222 --adrCloud '127.0.0.1' --portCloud 12345  --priority 32
- Python Fog.py --id 3 --myadr '127.0.0.1' --myport 33333 --adrCloud '127.0.0.1' --portCloud 12345  --priority 45
+ Python Fog.py --id 3 --myadr '127.0.0.1' --myport 33333 --adrCloud '127.0.0.1' --portCloud 12345  --priority 45   #on le laisse pour la partie transfer learning 
 
 ##################################################################################################################
 
@@ -20,4 +20,4 @@ Python Edge.py --id 3 --domain C  --model C --iid non_iid --adrFog '127.0.0.1' -
 Python Edge.py --id 4 --domain D  --model D --iid non_iid --adrFog '127.0.0.1' --portFog 22222 
 
 
-Python Edge.py --id 5 --domain C --iid non_iid --adrFog '127.0.0.1' --portFog 33333
+Python Edge.py --id 5 --domain C --iid non_iid --adrFog '127.0.0.1' --portFog 33333   # on laisse pour aprés avec son Fog 3
