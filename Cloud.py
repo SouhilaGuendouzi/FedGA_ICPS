@@ -256,8 +256,7 @@ class Cloud:
             stop=True
           j+=1
         i+=1
-      
-      print('on a trouvé ?', stop)
+
       
 
 
@@ -297,17 +296,12 @@ class Cloud:
     def registryUpdate(self):
       if (self.numberFogsreceived==len(self.active_fogs)):
 
-          #print('Registry !!!!!!!!!',self.registry[0])
+  
           print('registry update')
           if (len(self.registry)==0):
-            #print(self.active_fogs[0][3][0][0])
-            #print(self.active_fogs[0][1])
-            #print(self.active_fogs[0][3][0][1])
-            #print(self.active_fogs[0][3][0][2])
-            #print(self.active_fogs[0][3][0][4])
-            #print(self.active_fogs[0][3][0][5])
+  
             self.registry.append([self.active_fogs[0][3][0][0],self.active_fogs[0][1],self.active_fogs[0][3][0][1],self.active_fogs[0][3][0][2],self.active_fogs[0][3][0][4],self.active_fogs[0][3][0][5]]) #idedge,socketFog, addressEdge, avgaccuracy,domain , task
-          #print(len(self.active_fogs[0][3]),len(self.active_fogs[0][3]))
+
           for fog in self.active_fogs:
               #print(f'Fog {fog[0]}')
               for usr in fog[3]:
@@ -315,11 +309,9 @@ class Cloud:
                 i=0
                 stop=False
                 while (i< len(self.registry) and stop==False):
-                  #print(f'user{usr[0]} comparing with user {[self.registry[i][0]]} ',usr[4],self.registry[i][4],usr[5],self.registry[i][5], usr[2],self.registry[i][3])
-                  #print(usr[4]==self.registry[i][3] , usr[5]==self.registry[i][4])
                 
                   if (usr[4]==self.registry[i][4] and usr[4]==self.registry[i][4] and usr[2]>self.registry[i][3] ): #same domain and task but accuracy >>
-                    #print(f'Replace {fog  [0]},{usr[0]}')
+                   
                     stop=True
                     self.registry[i][0]=usr[0]
                     self.registry[i][1]=fog[1]  #socket
@@ -328,12 +320,12 @@ class Cloud:
                     self.registry[i][4]=usr[4]
                     self.registry[i][5]=usr[5]
                   elif (usr[4]==self.registry[i][4] and usr[4]==self.registry[i][4] and usr[2]==self.registry[i][3] ): #same domain and task and accuracy 
-                    #print('same')
+        
                     stop=True
                   i+=1
                   
                 if (i==len(self.registry) and stop==False):  
-                  #print(f'Append {fog [0]},{usr[0]}')
+            
                   self.registry.append([usr[0],fog[1],usr[1],usr[2],usr[4],usr[5]])
              
       
@@ -441,7 +433,6 @@ class Cloud:
             self.global_model.classification.load_state_dict(self.weights_global)
 
         self.numberFogsreceived=0
-        print('end')
         return self.global_model
 
 
@@ -449,7 +440,6 @@ class Cloud:
 
 
     def Elect(self):
-       print(self.numberFogsreceived,len(self.active_fogs))
        if (self.numberFogsreceived==len(self.active_fogs)):
         print(f'My capacity {self.capacity} and {self.priority}')
         capacity=self.capacity

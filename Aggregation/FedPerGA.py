@@ -38,7 +38,7 @@ def callback_generation(ga_instance):
     print("Fitness    = {fitness}".format(fitness=ga_instance.best_solution()[1]))
 
 def FedPerGA(w,modell,datasett):
-   print('begin FedGA')
+  
    global  initial_population, w_size, model, dataset, features
    dataset = datasett
    model   = modell

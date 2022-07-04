@@ -262,14 +262,9 @@ class Edge(object):
 
                   elif  (message.subject=='TLModel'):
                       self.add_message(f'Edge{self.id}> The appropriate model is received from the Fog server \n ')
-                      #print(message.data)
-                      self.model=message.data #le model tout entier 
-                      threading.Thread(target=self.Training, args=(False,)).start() #it returns the whole model
-                  
-                  #else :
-                   #    self.add_message(message.subject+"\n")
-
-                     
+        
+                      self.model=message.data  
+                      threading.Thread(target=self.Training, args=(False,)).start() #it returns the whole model       
             except Exception as e: 
                 print('Error from listen_for_messages_from_server', e)
            
@@ -437,7 +432,7 @@ class Edge(object):
              self.loss_locals_train.append(loss)
              self.loss_locals_test.append(lossT)
              self.send_message(self.weightsJustforReturn,'LocalModel')
-         print('fin')
+       
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 #*****************************************************************************************#
      def local_train_Other(self,Request):# with its own weights
@@ -490,7 +485,6 @@ class Edge(object):
              self.loss_locals_train.append(loss)
              self.loss_locals_test.append(lossT)
              self.send_message(self.weightsJustforReturn,'LocalModel')
-         #print(len( self.weightsJustforReturn))
          return self.weights, sum(epoch_loss) / len(epoch_loss)# state_dict(): Returns a dictionary containing a complete state of the module /// , loss_function of model_i
 
 #*****************************************************************************************#
@@ -553,7 +547,6 @@ class Edge(object):
          loss_func = nn.CrossEntropyLoss()
          self.weights=copy.deepcopy(self.model.state_dict())  #it contains all layers weights
          self.w=weights_global #it contains only fully connected layers
-         #print("Length global model weights", len(weights_global))
          self.previous_weights=self.model.state_dict()
          self.weights.update(self.w)
          self.data = self.datasetTrain
@@ -656,7 +649,6 @@ class Edge(object):
             self.lossTable[1]=round(test_loss,2)
             self.accuracy[1]=round(accuracy,2)
             self.trainACC['text']="Training Accuracy: "+str( self.accuracy[1])+"%"
-        #print(self.accuracy)
         return accuracy, test_loss
 
    
@@ -666,10 +658,8 @@ class Edge(object):
 #*****************************************************************************************#
 if __name__ == '__main__':
     args = args_parser() 
-   
-    print("next")
+
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    #print(torch.cuda.is_available())
     list_users=range(5)
     if (args.id in list_users): 
       mnist_non_iid_train_dls, mnist_non_iid_test_dls = get_FashionMNIST(args.iid,

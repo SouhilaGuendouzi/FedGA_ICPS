@@ -264,7 +264,7 @@ class Fog:
           print(fog,address)
           threading.Thread(target=self.Fog_handler, args=(fog, address)).start()
         except Exception as e :
-          print("Expecttttttttttt",e)
+          print(e)
 
 #*****************************************************************************************# 
     def Fog_handler(self,fog,address):  
@@ -285,7 +285,7 @@ class Fog:
                self.active_fogs.append([id, fog,address, [],None,None])  #id, socket, address, (list of ==> [idEdge,address,accuracy,persoModel,domain,task])
                print( "" + f" Fog {id} added to the System")
                self.add_message(f"Fog{id}> Fog {id} added to the System \n")
-               #self.send_message_to_fog(fog,"Server ~~ Successfully connected to Cloud Server ")
+              
                break
               else:
                self.active_fogs[i][1]= fog
@@ -297,7 +297,7 @@ class Fog:
               print("Fog username is empty")
           except  Exception as e: 
              print('checking as fog',msg)
-             #target=self.check_for_message_from_fog, args=(fog, msg, )).start()
+           
              threading.Thread(target=self.check_for_message_from_fog, args=(fog, msg, )).start()
             
 
@@ -372,18 +372,15 @@ class Fog:
         
         if message != '':
           self.add_message(f'Fog{id}> Message received From Fog'+ str(id)+' About '+message.subject  + ' \n')
-          #print('emmmmmmmmmmmmmm',message.data)
+ 
 
           while (i<len(self.active_fogs) and Find==False):
               username="Fog "+str(id)
-              print(username)
               if (self.active_fogs[i][0]==id): ### search about Fog
                 
                 try:
                  Find=True
-                 print(Find)
                  if (message.subject=="LocalModels"):
-                    print("choufi souhila",self.numberFogsreceived)
                     self.numberFogsreceived+=1
   
                     self.active_fogs[i][3]=message.data[0]   #list of edge nodes 
@@ -471,8 +468,7 @@ class Fog:
                         except Exception as e:
                             print(f"Fog {self.id}> Running as aggregator server on {self.HOST} {self.BackupPort}")
                             self.add_message(f"Fog{self.id}> Running as aggregator server on {self.HOST} {self.BackupPort} \n")
-                            #print(f"Unable to bind to host {self.HOST} and port {self.BackupPort}", e)
-                            #self.add_message(f"Unable to bind to host {self.HOST} and port {self.BackupPort} \n")
+                        
                   elif (message.subject=="Aggregator"):
                        address=message.data[0]
                        port=message.data[1]
@@ -646,7 +642,6 @@ class Fog:
                  Find=True
                  if (message.subject=="LocalModel"):
                    self.receivedLocalModels+=1
-                   print("choufi souhila from edge", username,self.receivedLocalModels)
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
@@ -660,8 +655,6 @@ class Fog:
                  elif (message.subject=="FinalLocalModel"):
                   
                    self.receivedLocalModels+=1
-                   print(f"FinalLocalModel",self.receivedLocalModels)
-                   #print('hello', self.receivedLocalModels)
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
@@ -675,8 +668,7 @@ class Fog:
                    self.display()
                    if (self.receivedLocalModels==len(self.active_clients) ):
                     if (self.aggregator!="Me"):   self.sendLocalModels(self.aggregator)
-                 elif (message.subject=="RequestTLModel"):
-                   #print(self.active_clients[i][0],self.active_clients[i][2],message[0],message[1])
+                 elif (message.subject=="RequestTLModel"): 
                    msg=[self.active_clients[i][0],self.active_clients[i][2],message[0],message[1]] #id, adress, domain, task
                    self.send_message_to_cloud(msg,"RequestTLModel" )
                 except Exception as e:
@@ -713,7 +705,6 @@ class Fog:
                  Find=True
                  if (message.subject=="LocalModel"):
                    self.receivedLocalModels+=1
-                   print("choufi souhila from edge", username,self.receivedLocalModels)
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
@@ -727,8 +718,6 @@ class Fog:
                  elif (message.subject=="FinalLocalModel"):
 
                    self.receivedLocalModels+=1
-                   print(f"FinalLocalModel",self.receivedLocalModels)
-                   #print('hello', self.receivedLocalModels)
                    self.active_clients[i][3][0]=message.personnalizedModel ### update model parameters
                    self.active_clients[i][3][1]=message.completeModel
                    self.active_clients[i][3][2]=message.accuracy
@@ -743,8 +732,7 @@ class Fog:
                    self.display()
 
               
-                 elif (message.subject=="RequestTLModel"):
-                   print(username, message.data[0],message.data[1])
+                 elif (message.subject=="RequestTLModel"):    
                    msg=[self.active_clients[i][0],self.active_clients[i][2],message.data[0],message.data[1]] #id, adress, domain, task
                    self.send_message_to_cloud(msg,"RequestTLModel" )
                    self.add_message(f'Fog{self.id}> Requesting the Cloud server about TL model \n')
@@ -781,7 +769,6 @@ class Fog:
       id_user=message[0]
       model = message[1] 
       for usr in self.active_clients:
-        #print (f'It is my client {usr[0]} and {id_user}')
         if (usr[0]==id_user):  #id
           model = message[1]  # the model and not wights
       self.add_message(f'Fog{self.id}> sending the TL model to my client {id_user} \n ')
@@ -804,11 +791,8 @@ class Fog:
             
 #*****************************************************************************************# 
     def FLAggregation(self):
-       print(f"{self.numberFogsreceived} and  {self.receivedLocalModels}")
        receiv =self.numberFogsreceived+  self.receivedLocalModels
        total =len(self.active_clients)+ len(self.active_fogs)
-
-       print(receiv, total)
 
        if (receiv==total):
         
@@ -910,9 +894,7 @@ class Fog:
 
 #*****************************************************************************************#   
     def display(self):
-       print(f'received model {self.receivedLocalModels}, clients length {len(self.active_clients)}')
        if (self.receivedLocalModels==len(self.active_clients)):
-          #threading.Thread(target=Plot_Graphes_for_fog, args=(id,len(a),e,a,b,c,d,)).start()
           Plot_Graphes_for_fog(self.id,len(self.accuracy_locals_train[0]),len(self.accuracy_locals_train),self.accuracy_locals_train,self.accuracy_locals_test,self.loss_locals_train,self.loss_locals_test)
           self.accuracy_locals_train=[]
           self.accuracy_locals_test=[]
@@ -926,8 +908,6 @@ if __name__ == '__main__':
     args = args_parser()   # ajoute id 
     
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    #print(torch.cuda.is_available())
-       # Set server limit
     fog =Fog(args=args,HOST='127.0.0.1',HostCloud='127.0.0.1')
     threading.Thread(target=fog.receive_clients, args=()).start()
     fog.root.mainloop()
